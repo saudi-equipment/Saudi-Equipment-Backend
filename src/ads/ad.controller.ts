@@ -1,0 +1,199 @@
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Res,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import {
+  CreateAdDto,
+  GetAllAdQueryDto,
+  ReportAdDto,
+  UpdateAdDto,
+} from './dtos';
+import { GetUser } from 'src/decorators/user.decorator';
+import { User } from 'src/schemas/user/user.schema';
+import { AdService } from './ad.service';
+import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
+import { RolesGuard } from 'src/auth/guard/roles.gurad';
+import { UserRole } from 'src/enums';
+import { Roles } from 'src/decorators/roles.decorator';
+import { FilesInterceptor } from '@nestjs/platform-express';
+
+@Controller('ad')
+export class AdController {
+  constructor(private readonly adService: AdService) {}
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER)
+  @Post('report-ad/:adId')
+  async reportAd(
+    @Res() response,
+    @GetUser('id') userId: string,
+    @Body() payload: ReportAdDto,
+    @Param('adId') adId: string,
+  ) {
+    try {
+      const data = await this.adService.reportAd(adId, userId, payload);
+      return response.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER)
+  @Post('create-ad')
+  @UseInterceptors(FilesInterceptor('files', 10))
+  async createAds(
+    @Res() response,
+    @GetUser() user: User,
+    @Body() payload: CreateAdDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    try {
+      if(files && files.length === 0){
+        throw new BadRequestException("Select alteast one file")
+      }
+      const data = await this.adService.createAd(user, payload, files);
+      return response
+        .status(HttpStatus.CREATED)
+        .json({ message: 'Ad created successfully', data });
+    } catch (error) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: error.message || 'An error occurred while creating the ad',
+      });
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER)
+  @Get('my-ads')
+  async getMyAds(@Res() response, @GetUser() user: User) {
+    try {
+      const data = await this.adService.getMyAds(user);
+      return response
+        .status(HttpStatus.OK)
+        .json({ message: 'Ads retrived successfully', data });
+    } catch (error) {
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: error.message || 'Ad Not found',
+      });
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER)
+  @Put(':id')
+  @UseInterceptors(FilesInterceptor('files', 10)) 
+  async updateAd(
+    @Res() response,
+    @Param('id') id: string,
+    @GetUser() user: User,
+    @Body() payload: UpdateAdDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    try {
+      
+      const data = await this.adService.updateAd(id, user, payload, files);
+
+      if (!data) {
+        return response
+          .status(HttpStatus.NOT_FOUND)
+          .json({ message: 'Ad not found or update failed', data: null });
+      }
+
+      return response
+        .status(HttpStatus.OK)
+        .json({ message: 'Ad updated successfully', data });
+    } catch (error) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: error.message || 'An error occurred while updating the ad',
+      });
+    }
+  }
+  
+
+  @Get('get-all-ad')
+  async getAllAds(
+    @Res() response,
+    @Query() query: GetAllAdQueryDto,
+  ) {
+    try {
+      const data = await this.adService.getAllAd(query);
+      return response.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: error.message || 'Ad Not found',
+      });
+    }
+  }
+
+  @Get(':id')
+  async getAdById(@Res() response, @Param('id') id: string) {
+    try {
+      const data = await this.adService.getAdById(id);
+      const result = { ad: data };
+
+      return response.status(HttpStatus.OK).json(result);
+    } catch (error) {
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: error.message || 'Ad Not found',
+      });
+    }
+  }
+
+  @Patch(':id/repost')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER)
+  async repostAd(
+    @GetUser() user: User,
+    @Res() response,
+    @Param('id') id: string,
+  ) {
+    try {
+      const data = await this.adService.repostAd(user, id);
+      return response.status(HttpStatus.OK).json({ ad: data });
+    } catch (error) {
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: error.message || 'Ad Not found',
+      });
+    }
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.USER)
+  @Delete(':id')
+  async deleteAd(
+    @Res() response,
+    @Param('id') id: string,
+    @GetUser() user: User,
+  ) {
+    const result = await this.adService.deleteAd(id, user);
+    if (result) {
+      return response.status(200).json({
+        message: 'Ad successfully deleted',
+      });
+    } else {
+      return response.status(400).json({
+        message: 'Failed to delete the ad',
+      });
+    }
+  }
+}
