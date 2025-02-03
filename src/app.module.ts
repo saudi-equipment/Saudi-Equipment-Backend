@@ -10,6 +10,7 @@ import { NotificationService } from './notification/notification.service';
 import { NotificationModule } from './notification/notification.module';
 import { AdModule } from './ads/ad.module';
 import { DigitalOceanModule } from './digital.ocean/digital.ocean.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { DigitalOceanModule } from './digital.ocean/digital.ocean.module';
     NotificationModule,
     AdModule,
     DigitalOceanModule,
+    PaymentModule,
   ],
   controllers: [AppController, NotificationController],
   providers: [AppService, NotificationService],

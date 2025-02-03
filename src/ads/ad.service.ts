@@ -15,6 +15,7 @@ import { AdStore } from 'src/data-stores/ad/ad.store';
 import { IAd, IReportAd } from 'src/interfaces/ads';
 import { getPagination } from 'src/utils/pagination.helper';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
+import { generateAdId } from 'src/utils';
 
 @Injectable()
 export class AdService {
@@ -29,6 +30,8 @@ export class AdService {
     files: Express.Multer.File[],
   ) {
     try {
+      const adId = generateAdId();
+      
       if (user.isPremiumUser === true) {
         const uploadedUrls = await Promise.all(
           files.map((file) =>
@@ -36,7 +39,7 @@ export class AdService {
           ),
         );
 
-        const data = await this.adStore.createAds(user, payload, uploadedUrls);
+        const data = await this.adStore.createAds(user, payload, adId, uploadedUrls);
         return data;
       } else {
         const uploadedUrls = await Promise.all(
@@ -51,7 +54,7 @@ export class AdService {
           throw new Error(' free users can only create up to 3 ads.');
         }
 
-        const data = await this.adStore.createAds(user, payload, uploadedUrls);
+        const data = await this.adStore.createAds(user, payload, adId, uploadedUrls);
         return data;
       }
     } catch (error) {
@@ -102,90 +105,6 @@ export class AdService {
     }
   }
   
-  // async updateAd(
-  //   id: string,
-  //   user: User,
-  //   payload: UpdateAdDto,
-  //   files?: Express.Multer.File[],
-  // ): Promise<IAd> {
-  //   try {
-  //     const existingAd = await this.adStore.getAdById(id);
-     
-  //     if (!existingAd) {
-  //       throw new NotFoundException('Ad not found');
-  //     }
-
-  //     const existingImages = existingAd.images || [];
-  //     if (existingImages.length === 0) {
-  //       const newUploadedUrls =
-  //         files && files.length > 0
-  //           ? await Promise.all(
-  //               files.map((file) =>
-  //                 this.digitalOceanService.uploadFileToSpaces(file),
-  //               ),
-  //             )
-  //           : [];
-
-  //       const updatedAd = await this.adStore.updateAd(
-  //         id,
-  //         user,
-  //         payload,
-  //         newUploadedUrls,
-  //       );
-  //       return updatedAd;
-  //     }
-
-  //     let updatedImages = existingImages;
-
-  //     if (files && files.length > 0) {
-  //       const uploadedFileNames = files.map((file) =>
-  //         this.extractFilename(file.originalname),
-  //       );
-
-  //       const imagesToDelete = existingImages.filter(
-  //         (image) => !uploadedFileNames.includes(image),
-  //       );
-       
-  //       const imagesToUpload = uploadedFileNames.filter(
-  //         (image) => !existingImages.includes(image),
-  //       );
-
-  //       if (imagesToDelete.length > 0) {
-  //         await this.digitalOceanService.deleteFilesFromSpaces(imagesToDelete);
-  //       }
-
-  //       const newUploadedUrls = await Promise.all(
-  //         files
-  //           .filter((file) =>
-  //             imagesToUpload.includes(this.extractFilename(file.originalname)),
-  //           )
-  //           .map((file) => this.digitalOceanService.uploadFileToSpaces(file)),
-  //       );
-
-  //       updatedImages = [
-  //         ...existingImages.filter((image) => !imagesToDelete.includes(image)), 
-  //         ...newUploadedUrls, 
-  //       ];
-  //     }
-
-  //     const updatedAd = await this.adStore.updateAd(
-  //       id,
-  //       user,
-  //       payload,
-  //       updatedImages,
-  //     );
-
-  //     return updatedAd;
-  //   } catch (error) {
-  //     console.error('Error in updateAd:', error.message);
-  //     throw new Error(`Failed to update ad: ${error.message}`);
-  //   }
-  // }
-
-  // private extractFilename(fileNameOrUrl: string): string {
-  //   return fileNameOrUrl.substring(fileNameOrUrl.lastIndexOf('/') + 1); 
-  // }
-
   async deleteAd(id: string, user: User) {
     try {
       return await this.adStore.deleteAd(id, user);

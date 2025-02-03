@@ -19,13 +19,15 @@ export class AdStore {
     @InjectModel('ReportAd') private reportAdModel: Model<IReportAd>,
   ) {}
 
-  async createAds(
+  async   createAds(
     user: User,
     payload: CreateAdDto,
+    adId: string,
     uploadedUrls: string[],
   ): Promise<IAd> {
     const newAd = new this.adModel({
       createdBy: user.id,
+      adId: adId,
       ...payload,
       images: uploadedUrls,
       user: user._id,
