@@ -19,6 +19,6 @@ import { adsSchema } from 'src/schemas/ad/ad.schema';
   ],
   providers: [UserService, UserStore],
   controllers: [UserController],
-  exports: [UserService]
+  exports: [UserService, UserStore]
 })
 export class UserModule {}

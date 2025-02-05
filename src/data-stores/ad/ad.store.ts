@@ -44,6 +44,15 @@ export class AdStore {
     return newAd;
   }
 
+  async updateAdStatus(id: string, expiresAt: any){
+   return await this.adModel.findByIdAndUpdate({
+    adId: id,
+    isPromoted: true,
+    premiumExpiry: expiresAt,
+   })
+  }
+
+
   async updateAd(
     id: string,
     user: User,
