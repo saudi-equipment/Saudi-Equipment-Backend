@@ -22,6 +22,9 @@ export interface IAd {
   views: number;
   userId: string;
   user?: User, 
+  promotionPlan?: string,
+  promotionStartDate?: Date,
+  promotionEndDate?:  Date,
   images: string[];
   createdAt: Date,
   updatedAt: Date

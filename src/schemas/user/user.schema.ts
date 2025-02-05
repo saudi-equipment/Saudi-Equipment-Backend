@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { UserRole } from 'src/enums';
 import { Ad } from '../ad/ad.schema';
+import { Subscription } from '../subscription/subscription.schema';
 
 @Schema({ timestamps: true })
 export class User extends Document {
@@ -22,17 +23,7 @@ export class User extends Document {
 
   @Prop({ required: true })
   city: string;
-
   
-  // @Prop({ required: true })
-  // city: string;
-  
-  // @Prop({ required: true })
-  // city: string;
-  
-  // @Prop({ required: true })
-  // city: string;
-
   @Prop({ required: false })
   profilePicture: string;
 
@@ -50,7 +41,7 @@ export class User extends Document {
 
   @Prop({ required: false, default: false })
   isPremiumUser: boolean;
-
+  
   @Prop({ required: false })
   createdDate: Date;
 
@@ -59,6 +50,9 @@ export class User extends Document {
 
   @Prop({ type: [Types.ObjectId], ref: 'Ad', required: false })
   ads: Ad[];
+
+  @Prop({ type: [Types.ObjectId], ref: 'Subscription', required: false })
+  subscriptions: Subscription[];
 }
 
 export const userSchema = SchemaFactory.createForClass(User);

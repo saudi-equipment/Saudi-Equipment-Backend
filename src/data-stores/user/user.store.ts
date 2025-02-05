@@ -25,6 +25,14 @@ export class UserStore {
     return newUser.save();
   }
 
+  async makeUserPremium(userId: string){
+    return await this.userModel.findByIdAndUpdate({
+      _id: new Types.ObjectId(userId),
+      isPremium: true,
+    })
+  }
+
+
   async updatedPassword(
     hashedPassword: string,
     phoneNumber: string,

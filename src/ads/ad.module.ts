@@ -9,11 +9,13 @@ import { userSchema } from 'src/schemas/user/user.schema';
 import { ConfigModule } from '@nestjs/config';
 import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
 import { reportAdSchema } from 'src/schemas/ad';
+import { PaymentModule } from 'src/payment/payment.module';
 
 @Module({
   imports: [
     forwardRef(() => UserModule),
     forwardRef(() => DigitalOceanModule),
+    forwardRef(() => PaymentModule),
     MongooseModule.forFeature([
       { name: 'Ad', schema: adsSchema },
       { name: 'User', schema: userSchema },
@@ -22,5 +24,6 @@ import { reportAdSchema } from 'src/schemas/ad';
   ],
   providers: [AdService, AdStore],
   controllers: [AdController],
+  exports: [AdStore]
 })
 export class AdModule {}

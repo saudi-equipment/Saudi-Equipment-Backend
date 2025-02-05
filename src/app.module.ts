@@ -11,6 +11,7 @@ import { NotificationModule } from './notification/notification.module';
 import { AdModule } from './ads/ad.module';
 import { DigitalOceanModule } from './digital.ocean/digital.ocean.module';
 import { PaymentModule } from './payment/payment.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { PaymentModule } from './payment/payment.module';
     AdModule,
     DigitalOceanModule,
     PaymentModule,
+    WebhooksModule,
   ],
   controllers: [AppController, NotificationController],
   providers: [AppService, NotificationService],
