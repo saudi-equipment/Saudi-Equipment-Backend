@@ -14,8 +14,13 @@ export class PaymentController {
   @Post('create-subscription')
   async createSubscription(@Body() payload: any) {
     try {
-      if (payload.paymentStatus === 'paid') {
-        return await this.paymentService.createSubscription(payload);
+
+      if (payload.status === 'paid') {
+        const data = await this.paymentService.createSubscription(payload);
+        return {
+          subscription: data.subscription, 
+          user: data.user
+        }
       }
 
       return { message: "Api call failed becuase the payment is failed" };
@@ -27,7 +32,7 @@ export class PaymentController {
   @Put('promote-ad')
   async promoteAd(@Body() payload: any) {
     try {
-      if(payload.paymentStatus === 'paid'){
+      if(payload.status === 'paid'){
         return await this.paymentService.promoteAd(payload);
       }
       

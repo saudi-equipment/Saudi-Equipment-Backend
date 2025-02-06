@@ -1,3 +1,4 @@
+import { bool } from 'aws-sdk/clients/signer';
 import { UserRole } from 'src/enums';
 import { Ad } from 'src/schemas/ad/ad.schema';
 
@@ -13,6 +14,7 @@ export interface IUser extends Document {
   isVerified?: boolean;
   isDeleted?: boolean;
   isBlocked?: boolean;
+  isPremiumUser?: boolean;
   otpId?: string,
   ads?: Ad[]
   

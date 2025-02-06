@@ -32,10 +32,11 @@ export class PaymentStore {
         invoice_id,
         price,
         created_at,
-        updated_at,
         userId,
         plan,
         duration,
+        paymentType,
+        paymentCompany
       } = payload;
 
       const startDate = new Date(created_at || Date.now());
@@ -66,8 +67,11 @@ export class PaymentStore {
         price,
         startDate,
         endDate,
-        status: 'active',
+        subscriptionStatus: 'active',
         invoice_id,
+        duration: duration,
+        paymentType: paymentType,
+        paymentCompany: paymentCompany,
         ...payload, 
       });
 
@@ -80,7 +84,7 @@ export class PaymentStore {
 
   async promoteAd(payload: any) {
     try {
-      const { adId, promotionPlan, userId } = payload;
+      const { adId, promotionPlan, userId, duration, paymentType, paymentCompany, transactionId } = payload;
 
       const ad = await this.adModel.findById({ _id: adId, createdBy: userId });
       if (!ad) throw new Error('Ad not found');
@@ -109,6 +113,10 @@ export class PaymentStore {
       ad.promotionPlan = promotionPlan;
       ad.promotionStartDate = now;
       ad.promotionEndDate = promotionEndDate;
+      ad.duration = duration;
+      ad.paymentCompany = paymentCompany;
+      ad.paymentType = paymentType;
+      ad.transactionId = transactionId;
 
       await ad.save();
       return ad;

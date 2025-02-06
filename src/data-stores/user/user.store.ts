@@ -25,13 +25,25 @@ export class UserStore {
     return newUser.save();
   }
 
-  async makeUserPremium(userId: string){
-    return await this.userModel.findByIdAndUpdate({
-      _id: new Types.ObjectId(userId),
-      isPremium: true,
-    })
+  async makeUserPremium(userId: string) {
+    try {
+      const updatedUser = await this.userModel.findByIdAndUpdate(
+        new Types.ObjectId(userId),  
+        { isPremiumUser: true },   
+        { new: true, select: 'id, name, isPremiumUser' }                
+      );
+  
+      if (!updatedUser) {
+        throw new Error('User not found');
+      }
+  
+      return updatedUser;
+    } catch (error) {
+      console.error('Error making user premium:', error);
+      throw error;
+    }
   }
-
+  
 
   async updatedPassword(
     hashedPassword: string,
