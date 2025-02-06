@@ -42,6 +42,18 @@ export class Ad extends Document {
   @Prop({ required: true, default: true})
   isActive: boolean;
 
+  @Prop({ required: false})
+  duration: string;
+
+  @Prop({ required: false})
+  paymentType: string;
+
+  @Prop({ required: false})
+  paymentCompany: string;
+
+  @Prop({ required: false})
+  transactionId: string;
+
   @Prop({ required: true, default: false})
   isPromoted: boolean;
 

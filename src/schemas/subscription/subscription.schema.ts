@@ -14,13 +14,22 @@ export class Subscription extends Document {
   subscribedBy: string;
 
   @Prop({ required: false })
+  paymentType: string;
+
+  @Prop({ required: false })
+  paymentCompany: string;
+  
+  @Prop({ required: false })
   plan: string;
 
   @Prop({ required: false })
   duration: string;
 
-  @Prop({ type: String, enum: ['active', 'inactive'], default: 'active' })
-  status: string;  
+  @Prop({ required: false })
+  description: string;
+
+  @Prop({ type: String, enum: ['active', 'inactive'] })
+  subscriptionStatus: string;  
 
   @Prop({ required: true })
   price: number;

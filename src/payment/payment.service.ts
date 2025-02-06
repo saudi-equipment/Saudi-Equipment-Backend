@@ -53,8 +53,10 @@ export class PaymentService {
   async createSubscription(payload: any) {
     try {
       const subscription = await this.paymentStore.createSubscription(payload);
-      await this.userStore.makeUserPremium(subscription.user.id);
-      return subscription;
+      const user = await this.userStore.makeUserPremium(subscription.user.id);
+      return {
+        subscription, user
+      };
     } catch (error) {
       throw error
     }
