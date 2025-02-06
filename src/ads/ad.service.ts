@@ -179,4 +179,9 @@ export class AdService {
       throw error;
     }
   }
+
+  async expireUserAds(userId: string){
+    const result = await this.adStore.expireUserAds(userId);
+    return result;
+  }
 }

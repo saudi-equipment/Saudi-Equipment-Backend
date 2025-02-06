@@ -84,6 +84,18 @@ export class UserStore {
     }
   }
 
+  async expireUserSubscription(userId: string){
+   try {
+    const now = new Date();
+
+    const result = await this.userModel.updateMany(
+      {_id: new Types.ObjectId(userId), }
+    )
+   } catch (error) {
+    
+   }
+  }
+
   async getUserWithAd(id: string): Promise<IUser | null> {
     const result = await this.userModel.aggregate([
       {

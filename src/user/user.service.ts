@@ -117,4 +117,12 @@ export class UserService {
       throw error;
     }
   }
+
+  async expireUserSubscription(userId: string){
+    try {
+      return await this.userStore.expireUserSubscription(userId)
+    } catch (error) {
+      throw error;
+    }
+  }
 }

@@ -57,7 +57,7 @@ export class Ad extends Document {
   @Prop({ required: true, default: false})
   isPromoted: boolean;
 
-  @Prop({ required: false, enum: ['day', 'week', 'month', 'year'] })
+  @Prop({ required: false, enum: ['7days', '15day', '30days'] })
   promotionPlan: string;
   
   @Prop({ type: Date, required: false })
