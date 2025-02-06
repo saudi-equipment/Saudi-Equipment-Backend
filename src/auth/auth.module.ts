@@ -2,7 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { UserModule } from 'src/user/user.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -28,7 +28,8 @@ import { OtpStore } from 'src/data-stores/otp/otp.store';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy, OtpService, OtpStore],
+  providers: [AuthService, JwtStrategy, OtpService, OtpStore, JwtService],
   controllers: [AuthController],
+  exports: [JwtService]
 })
 export class AuthModule {}

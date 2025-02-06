@@ -1,6 +1,6 @@
 import { AdStore } from 'src/data-stores/ad/ad.store';
 import { PaymentStore } from './../data-stores/payment/payment.data.store';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConflictException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UserStore } from 'src/data-stores/user/user.store';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
@@ -46,26 +46,45 @@ export class PaymentService {
       },
     );
 
-    console.log(response);
     return response.data;
   }
 
   async createSubscription(payload: any) {
     try {
+      const existingSubscription = await this.paymentStore.existingSubscription(payload.userId);
+
+      if(existingSubscription){
+        throw new ConflictException("Already subscribed this plan")
+      }
+      
       const subscription = await this.paymentStore.createSubscription(payload);
       const user = await this.userStore.makeUserPremium(subscription.user.id);
       return {
-        subscription, user
+        subscription,
+        user,
       };
     } catch (error) {
-      throw error
+      throw error;
     }
   }
 
-  async promoteAd(payload: any){
+  async promoteAd(payload: any) {
     try {
       const promotedAd = await this.paymentStore.promoteAd(payload);
       return promotedAd;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getSubscription(userId: string){
+    return await this.paymentStore.getSubscription(userId)
+  }
+
+
+  async expireUserSubscription(userId: string) {
+    try {
+      return await this.paymentStore.expireUserSubscription(userId);
     } catch (error) {
       throw error;
     }

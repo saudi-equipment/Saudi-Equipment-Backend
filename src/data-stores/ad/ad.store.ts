@@ -19,7 +19,7 @@ export class AdStore {
     @InjectModel('ReportAd') private reportAdModel: Model<IReportAd>,
   ) {}
 
-  async   createAds(
+  async createAds(
     user: User,
     payload: CreateAdDto,
     adId: string,
@@ -44,14 +44,13 @@ export class AdStore {
     return newAd;
   }
 
-  async updateAdStatus(id: string, expiresAt: any){
-   return await this.adModel.findByIdAndUpdate({
-    adId: id,
-    isPromoted: true,
-    premiumExpiry: expiresAt,
-   })
+  async updateAdStatus(id: string, expiresAt: any) {
+    return await this.adModel.findByIdAndUpdate({
+      adId: id,
+      isPromoted: true,
+      premiumExpiry: expiresAt,
+    });
   }
-
 
   async updateAd(
     id: string,
@@ -60,13 +59,12 @@ export class AdStore {
     uploadedUrls?: string[],
   ): Promise<IAd> {
     try {
-    
       const updatedAd = await this.adModel.findByIdAndUpdate(
-        { _id: new Types.ObjectId(id), createdBy: user._id},
-        { $set: { ...payload, images: uploadedUrls || null  } },
+        { _id: new Types.ObjectId(id), createdBy: user._id },
+        { $set: { ...payload, images: uploadedUrls || null } },
         { new: true },
       );
-     
+
       return updatedAd;
     } catch (error) {
       console.error('Error in updateAd:', error.message);
@@ -82,8 +80,7 @@ export class AdStore {
 
     if (existingAd) {
       existingAd.isRenew = true;
-      existingAd.isActive = true,
-      existingAd.updatedAt = new Date();
+      (existingAd.isActive = true), (existingAd.updatedAt = new Date());
 
       await existingAd.save();
       return existingAd;
@@ -100,7 +97,7 @@ export class AdStore {
     try {
       const ad = await this.adModel.aggregate([
         {
-          $match: { _id: new Types.ObjectId(id)},
+          $match: { _id: new Types.ObjectId(id) },
         },
         {
           $lookup: {
@@ -184,7 +181,7 @@ export class AdStore {
       // if (user && user._id) {
       //   filters.userId = { $ne: user._id };
       // }
-      
+
       if (category) {
         if (Array.isArray(category)) {
           filters.category = {
@@ -225,7 +222,7 @@ export class AdStore {
 
       if (isPromoted) {
         filters.isPromoted = true;
-      }      
+      }
 
       if (postedDate) {
         const now = new Date();
@@ -288,7 +285,7 @@ export class AdStore {
         {
           $sort: {
             isPromoted: -1, // Promoted ads first (descending)
-            createdAt: -1,  // Default to newest first if no sortByDate is provided
+            createdAt: -1, // Default to newest first if no sortByDate is provided
             ...(sortByPrice === 'asc' ? { priceNumeric: 1 } : {}),
             ...(sortByPrice === 'desc' ? { priceNumeric: -1 } : {}),
             ...(sortByDate === 'newest' ? { createdAt: -1 } : {}),
@@ -299,7 +296,7 @@ export class AdStore {
           $project: { priceNumeric: 0 },
         },
       ];
-      
+
       const totalCountPipeline: any[] = [
         { $match: filters },
         { $count: 'totalAds' },
@@ -310,10 +307,7 @@ export class AdStore {
       if (isHome) {
         pipeline.push({
           $facet: {
-            promotedAds: [
-              { $match: { isPromoted: true } },
-              { $limit: 4 },
-            ],
+            promotedAds: [{ $match: { isPromoted: true } }, { $limit: 4 }],
             saleAds: [
               { $match: { category: { $regex: /Sale/i } } },
               { $limit: 4 },
@@ -328,7 +322,7 @@ export class AdStore {
             ],
           },
         });
-      
+
         const result = await this.adModel.aggregate(pipeline);
         return {
           totalAds,
@@ -347,14 +341,13 @@ export class AdStore {
             },
           },
         );
-      
+
         const result = await this.adModel.aggregate(pipeline);
         return {
           totalAds,
           ads: result,
         };
       }
-      
     } catch (error) {
       throw error;
     }
@@ -396,17 +389,16 @@ export class AdStore {
         user: new Types.ObjectId(userId),
         ...payload,
       });
-  
+
       await reportedAd.save();
-  
-     
+
       const result = await this.reportAdModel.aggregate([
         {
-          $match: { _id: reportedAd._id }, 
+          $match: { _id: reportedAd._id },
         },
         {
           $lookup: {
-            from: 'users', 
+            from: 'users',
             localField: 'user',
             foreignField: '_id',
             as: 'user',
@@ -427,15 +419,34 @@ export class AdStore {
             message: 1,
             reporterName: '$user.name',
             reporterEmail: '$user.email',
-            reporterPhoneNumber:  '$user.phoneNumber'
+            reporterPhoneNumber: '$user.phoneNumber',
           },
         },
       ]);
-  
+
       return result[0];
     } catch (error) {
       throw error;
     }
   }
+
+  async expireUserAds(userId: string) {
+    try {
+      const currentDate = new Date();
+      const result = await this.adModel.updateMany(
+        {
+          createdBy: userId,
+          promotionEndDate: { $lt: currentDate },
+          isPromoted: true,
+        },
+        { $set: { isPromoted: false } },
+      );
+      
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   
 }
