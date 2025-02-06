@@ -163,8 +163,6 @@ export class AdService {
       const { page, limit } = query;
       const { skip, limit: currentLimit } = getPagination({ page, limit });
       const result = await this.adStore.getAllAd(skip, currentLimit, query);
-
-      // Return the original result if 'isHome' is not true
       return result;
     } catch (error) {
       throw error;

@@ -173,14 +173,15 @@ export class AdStore {
         sortByDate,
         isHome,
         isPromoted,
+        userId
       } = query;
 
       // console.log('Query', query);
       const filters: any = { isActive: true };
 
-      // if (user && user._id) {
-      //   filters.userId = { $ne: user._id };
-      // }
+      if (userId) {
+        filters.createdBy = { $ne: userId }; 
+      }
 
       if (category) {
         if (Array.isArray(category)) {
@@ -261,11 +262,6 @@ export class AdStore {
         }
       }
 
-      // const promotedSort = { isPromoted: -1 };
-      // const priceSort: any = sortByPrice === 'asc' ? { price: 1 } : sortByPrice === 'desc' ? { price: -1 }: {};
-      // const dateSort: any = sortByDate === 'newest' ? { createdAt: -1 } : sortByDate === 'oldest' ? { createdAt: 1 }: {};
-      // const sortStage = { ...promotedSort, ...priceSort, ...dateSort };
-
       const pipeline: any[] = [
         {
           $match: filters,
@@ -276,16 +272,16 @@ export class AdStore {
               $convert: {
                 input: '$price',
                 to: 'double',
-                onError: null, // Handle non-numeric prices
-                onNull: null, // Handle null values gracefully
+                onError: null, 
+                onNull: null, 
               },
             },
           },
         },
         {
           $sort: {
-            isPromoted: -1, // Promoted ads first (descending)
-            createdAt: -1, // Default to newest first if no sortByDate is provided
+            isPromoted: -1, 
+            createdAt: -1, 
             ...(sortByPrice === 'asc' ? { priceNumeric: 1 } : {}),
             ...(sortByPrice === 'desc' ? { priceNumeric: -1 } : {}),
             ...(sortByDate === 'newest' ? { createdAt: -1 } : {}),
