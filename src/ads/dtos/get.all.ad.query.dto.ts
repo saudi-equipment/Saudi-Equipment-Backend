@@ -20,6 +20,11 @@ export class GetAllAdQueryDto {
   @IsString()
   search?: string;
 
+  @ApiProperty({ description: ' Search the ads' })
+  @IsOptional()
+  @IsString()
+  userId?: string;
+
   @ApiProperty({ description: ' Location of the city' })
   @IsOptional()
   @IsString()
