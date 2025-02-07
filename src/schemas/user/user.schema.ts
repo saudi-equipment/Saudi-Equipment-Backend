@@ -34,6 +34,9 @@ export class User extends Document {
   isVerified: boolean;
 
   @Prop({ required: false, default: false })
+  isEmailVerified: boolean;
+
+  @Prop({ required: false, default: false })
   isDeleted: boolean;
 
   @Prop({ required: false, default: false })
