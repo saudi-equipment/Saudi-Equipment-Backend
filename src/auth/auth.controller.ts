@@ -25,7 +25,6 @@ import { RolesGuard } from './guard/roles.gurad';
 import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
 import { GetUser } from 'src/decorators/user.decorator';
-import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -36,7 +35,6 @@ export class AuthController {
   ) {}
 
   @Post('sign-up')
-  @UseInterceptors(FileInterceptor('profilePicture'))
   async signUp(
     @Res() response,
     @Body() payload: SignUpDto,
