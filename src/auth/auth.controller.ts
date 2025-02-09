@@ -1,16 +1,32 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   HttpStatus,
   Post,
   Put,
   Res,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ForgotPasswordDto, LoginDto, ResendOtpDto, ResetPasswordDto, SignUpDto, VerifyOtpDto } from './dtos';
+import {
+  ChangePasswordDto,
+  ForgotPasswordDto,
+  LoginDto,
+  ResendOtpDto,
+  ResetPasswordDto,
+  SignUpDto,
+  VerifyOtpDto,
+} from './dtos';
 import { OtpService } from './otp.service';
+import { User } from 'src/schemas/user/user.schema';
 import { ApiTags } from '@nestjs/swagger';
+import { RolesGuard } from './guard/roles.gurad';
+import { Roles } from 'src/decorators/roles.decorator';
+import { UserRole } from 'src/enums';
+import { GetUser } from 'src/decorators/user.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -20,13 +36,17 @@ export class AuthController {
   ) {}
 
   @Post('sign-up')
-  async signUp(@Res() response, @Body() payload: SignUpDto) {
-    try {
+  @UseInterceptors(FileInterceptor('profilePicture'))
+  async signUp(
+    @Res() response,
+    @Body() payload: SignUpDto,
+  ) {
+    try {     
       const data = await this.authService.signUp(payload);
       return response.status(HttpStatus.OK).json({
         statusCode: HttpStatus.OK,
         user: data.user,
-        otp: data.otp
+        otp: data.otp,
       });
     } catch (error) {
       throw error;
@@ -54,12 +74,9 @@ export class AuthController {
   }
 
   @Post('forgot-password')
-  async forgotPassword(
-    @Res() response,
-    @Body() payload: ForgotPasswordDto,
-  ) {
+  async forgotPassword(@Res() response, @Body() payload: ForgotPasswordDto) {
     try {
-      const phoneNumber = payload.phoneNumber
+      const phoneNumber = payload.phoneNumber;
       const data = await this.otpService.sendOtp(phoneNumber);
 
       return response.status(HttpStatus.OK).json({
@@ -79,6 +96,26 @@ export class AuthController {
       return response.status(HttpStatus.OK).json(data);
     } catch (error) {
       throw error;
+    }
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.USER)
+  @Put('change-password')
+  async changePassword(
+    @Res() response,
+    @GetUser() user: User,
+    @Body() payload: ChangePasswordDto,
+  ) {
+    try {
+      await this.authService.changePassword(user, payload);
+      return response.status(200).json({
+        message: 'Password updated successfully',
+      });
+    } catch (error) {
+      return response.status(error.status || 500).json({
+        message: error.message || 'Failed to change password',
+      });
     }
   }
 

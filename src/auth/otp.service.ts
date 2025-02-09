@@ -4,7 +4,6 @@ import { NotificationService } from 'src/notification/notification.service';
 import { UserService } from 'src/user/user.service';
 import {generateExpireTime,generateSixDigitCode} from 'src/utils/generate.otp.helper';
 import { VerifyOtpDto } from './dtos/verify.otp.dto';
-import {ResetPasswordDto } from './dtos';
 import { IOtp } from 'src/interfaces/otp/otp.interface';
 
 @Injectable()

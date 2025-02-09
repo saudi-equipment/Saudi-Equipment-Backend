@@ -1,6 +1,7 @@
-import { bool } from 'aws-sdk/clients/signer';
+
 import { UserRole } from 'src/enums';
 import { Ad } from 'src/schemas/ad/ad.schema';
+import { Subscription } from 'src/schemas/subscription/subscription.schema';
 
 export interface IUser extends Document {
   id:string,
@@ -12,9 +13,11 @@ export interface IUser extends Document {
   profilePicture?: string;
   role: UserRole;
   isVerified?: boolean;
+  isActive?: boolean;
   isDeleted?: boolean;
   isBlocked?: boolean;
   isPremiumUser?: boolean;
+  subscriptions?: Subscription,
   otpId?: string,
   ads?: Ad[]
   

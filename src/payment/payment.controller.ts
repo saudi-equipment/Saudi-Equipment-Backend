@@ -6,11 +6,13 @@ import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
 import { RolesGuard } from 'src/auth/guard/roles.gurad';
 import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
-@UseGuards(JwtAuthGuard, RolesGuard)
+import { CheckUserAccountGuard } from 'src/middleware/check.user.account.middleware';
+@UseGuards(RolesGuard)
 @Roles(UserRole.USER)
 @Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
+  
   @Post('create-payment')
   async createPayment(@Body() payload: CreatePaymentDto) {
     console.log('Payload', payload);

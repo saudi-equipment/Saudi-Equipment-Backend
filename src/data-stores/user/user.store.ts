@@ -22,28 +22,27 @@ export class UserStore {
 
   async createUser(userData: SignUpDto): Promise<IUser> {
     const newUser = new this.userModel(userData);
-    return newUser.save();
+    return await newUser.save();
   }
 
   async makeUserPremium(userId: string) {
     try {
       const updatedUser = await this.userModel.findByIdAndUpdate(
-        new Types.ObjectId(userId),  
-        { isPremiumUser: true },   
-        { new: true, select: 'id, name, isPremiumUser' }                
+        new Types.ObjectId(userId),
+        { isPremiumUser: true },
+        { new: true, select: 'id, name, isPremiumUser' },
       );
-  
+
       if (!updatedUser) {
         throw new Error('User not found');
       }
-  
+
       return updatedUser;
     } catch (error) {
       console.error('Error making user premium:', error);
       throw error;
     }
   }
-  
 
   async updatedPassword(
     hashedPassword: string,
@@ -60,6 +59,16 @@ export class UserStore {
     return await this.userModel.findById({ _id: id }).exec();
   }
 
+  async activateOrDeactivateAccount(user: User): Promise<IUser | null> {
+    const updatedUser = await this.userModel.findOneAndUpdate(
+      { _id: user.id },
+      { $set: { isActive: !user.isActive } },
+      {new: true}
+    )
+
+    return updatedUser;
+  }
+
   async verifyUser(id: string) {
     try {
       return await this.userModel.updateOne({ _id: id }, { isVerified: true });
@@ -71,11 +80,12 @@ export class UserStore {
   async updateUser(
     userId: string,
     payload: UserUpdateDto,
+    updatedProfilePic?: string,
   ): Promise<IUser | null> {
     try {
       const updatedUser = await this.userModel.findOneAndUpdate(
         { _id: userId },
-        { $set: payload },
+        { $set: { ...payload, profilePicture: updatedProfilePic } },
         { new: true },
       );
       return updatedUser;
@@ -84,16 +94,14 @@ export class UserStore {
     }
   }
 
-  async expireUserSubscription(userId: string){
-   try {
-    const now = new Date();
+  async expireUserSubscription(userId: string) {
+    try {
+      const now = new Date();
 
-    const result = await this.userModel.updateMany(
-      {_id: new Types.ObjectId(userId), }
-    )
-   } catch (error) {
-    
-   }
+      const result = await this.userModel.updateMany({
+        _id: new Types.ObjectId(userId),
+      });
+    } catch (error) {}
   }
 
   async getUserWithAd(id: string): Promise<IUser | null> {
