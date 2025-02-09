@@ -36,9 +36,4 @@ export class SignUpDto {
   @IsString()
   @IsOptional()
   readonly city: string;
-
-  @ApiProperty({ description: 'The profile picture of the user (URL)' })
-  @IsString()
-  @IsOptional()
-  readonly profilePicture: string;
 }

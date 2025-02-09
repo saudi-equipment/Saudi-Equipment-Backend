@@ -1,9 +1,12 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as morgan from 'morgan';
+import { JwtAuthGuard } from './auth/guard/jwt.guard';
+import { CheckUserAccountGuard } from './middleware/check.user.account.middleware';
+import { UserService } from './user/user.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,6 +19,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api', app, document);
   const configService = app.get(ConfigService);
+  const reflector = app.get(Reflector);
+  const userService = app.get(UserService); 
   
   app.useGlobalPipes(
     new ValidationPipe({
@@ -26,6 +31,10 @@ async function bootstrap() {
   );
   
   app.enableCors();
+  app.useGlobalGuards(
+    new JwtAuthGuard(reflector),
+    new CheckUserAccountGuard(userService)
+  );
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   const port = configService.get<number>('PORT');
 

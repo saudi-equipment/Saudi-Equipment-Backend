@@ -11,11 +11,13 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { otpSchema } from 'src/schemas/otp/otp.schema';
 import { NotificationModule } from 'src/notification/notification.module';
 import { OtpStore } from 'src/data-stores/otp/otp.store';
+import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
 
 @Module({
   imports: [
     forwardRef(() => UserModule),
     forwardRef(() => NotificationModule),
+    forwardRef(() => DigitalOceanModule),
     ConfigModule.forRoot({ isGlobal: true }), 
     PassportModule,
     MongooseModule.forFeature([{ name: 'Otp', schema: otpSchema }]),
@@ -24,10 +26,7 @@ import { OtpStore } from 'src/data-stores/otp/otp.store';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
         const secretKey = configService.get<string>('SECRET_KEY');
-
-        // Debugging to ensure SECRET_KEY is being read
-        console.log('Loaded SECRET_KEY:', secretKey);
-
+        
         if (!secretKey) {
           throw new Error('SECRET_KEY is not defined in environment variables');
         }

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class UserUpdateDto {
@@ -25,8 +26,28 @@ export class UserUpdateDto {
   @IsOptional()
   readonly city: string;
 
-  @ApiProperty({ description: 'The profile picture of the user (URL)' })
-  @IsString()
+  @ApiProperty({ description: 'Profile pic url'})
   @IsOptional()
-  readonly profilePicture: string;
+  @IsString()
+  profilePicUrl?: string;
+
+  @ApiProperty({ description: ' WhatsApp Link'})
+  @IsOptional()
+  @IsString()
+  whatsAppLink?: string;
+
+  @ApiProperty({ description: ' xLink Link'})
+  @IsOptional()
+  @IsString()
+  xLink?: string;
+
+  @ApiProperty({ description: ' xLink Link'})
+  @IsOptional()
+  @IsString()
+  metaLink?: string;
+
+  @ApiProperty({ description: ' xLink Link'})
+  @IsOptional()
+  @IsString()
+  instaLink?: string;
 }

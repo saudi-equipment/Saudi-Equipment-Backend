@@ -33,6 +33,9 @@ export class User extends Document {
   @Prop({ required: false, default: false })
   isVerified: boolean;
 
+  @Prop({ required: false, default: true })
+  isActive: boolean;
+
   @Prop({ required: false, default: false })
   isEmailVerified: boolean;
 
@@ -44,7 +47,19 @@ export class User extends Document {
 
   @Prop({ required: false, default: false })
   isPremiumUser: boolean;
+
+  @Prop({ required: false })
+  metaLink: string;
   
+  @Prop({ required: false })
+  xLink: string;
+
+  @Prop({ required: false })
+  whatsAppLink: string;
+
+  @Prop({ required: false })
+  instaLink: string;
+
   @Prop({ required: false })
   createdDate: Date;
 

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request} from 'express';
 import {
   BadRequestException,
   Body,
@@ -26,12 +26,13 @@ import {
 import { GetUser } from 'src/decorators/user.decorator';
 import { User } from 'src/schemas/user/user.schema';
 import { AdService } from './ad.service';
-import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
 import { RolesGuard } from 'src/auth/guard/roles.gurad';
 import { UserRole } from 'src/enums';
 import { Roles } from 'src/decorators/roles.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
+import { CheckUserAccountGuard } from 'src/middleware/check.user.account.middleware';
+import { Public } from 'src/decorators/public.routes.decorator';
 
 @Controller('ad')
 export class AdController {
@@ -40,7 +41,7 @@ export class AdController {
     private readonly expireAdsMiddleware: ExpireAdsMiddleware,
   ) {}
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Post('report-ad/:adId')
   async reportAd(
@@ -59,7 +60,7 @@ export class AdController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Post('create-ad')
   @UseInterceptors(FilesInterceptor('files', 10))
@@ -87,7 +88,7 @@ export class AdController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Get('my-ads')
   async getMyAds(@Req() req: Request, @Res() response, @GetUser() user: User) {
@@ -105,7 +106,7 @@ export class AdController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Put(':id')
   @UseInterceptors(FilesInterceptor('files', 10))
@@ -138,6 +139,7 @@ export class AdController {
     }
   }
 
+  @Public()
   @Get('get-all-ad')
   async getAllAds(@Res() response, @Query() query: GetAllAdQueryDto) {
     try {
@@ -151,6 +153,7 @@ export class AdController {
     }
   }
 
+  @Public()
   @Get(':id')
   async getAdById(@Res() response, @Param('id') id: string) {
     try {
@@ -167,7 +170,7 @@ export class AdController {
   }
 
   @Patch(':id/repost')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   async repostAd(
     @Req() req: Request,
@@ -187,7 +190,7 @@ export class AdController {
     }
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Delete(':id')
   async deleteAd(

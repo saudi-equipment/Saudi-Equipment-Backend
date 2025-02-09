@@ -30,7 +30,7 @@ export class DigitalOceanService {
 
   async uploadFileToSpaces(file: Express.Multer.File): Promise<string> {
     const { originalname, buffer, mimetype } = file;
-    const key = `ads/${Date.now()}-${originalname}`;
+    const key = `files/${Date.now()}-${originalname}`;
 
     const uploadParams = {
       Bucket: this.configService.get('SPACES_BUCKET_NAME'),
@@ -47,7 +47,7 @@ export class DigitalOceanService {
     return url;
   }
 
-  async deleteFilesFromSpaces(fileUrls: string[]) {
+  async deleteFilesFromSpaces(fileUrls?: string | string[] ) {
     try {
       for (const url of fileUrls) {
         const fileKey = this.extractFileKeyFromUrl(url);

@@ -8,8 +8,9 @@ import { NotificationModule } from 'src/notification/notification.module';
 import { AuthModule } from 'src/auth/auth.module';
 import { AdModule } from 'src/ads/ad.module';
 import { adsSchema } from 'src/schemas/ad/ad.schema';
-import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { PaymentModule } from 'src/payment/payment.module';
+import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
+import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PaymentModule } from 'src/payment/payment.module';
     forwardRef(() => NotificationModule),
     forwardRef(() => AuthModule),
     forwardRef(() => AdModule),
+    forwardRef(() => DigitalOceanModule),
     MongooseModule.forFeature([{ name: 'User', schema: userSchema }, { name: 'Ad', schema: adsSchema }, ]),
   ],
   providers: [UserService, UserStore, ExpireAdsMiddleware],
