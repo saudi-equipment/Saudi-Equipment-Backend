@@ -141,15 +141,7 @@ export class AuthController {
         statusCode: HttpStatus.OK,
         message: 'Login successful',
         accessToken: token,
-        user: {
-          _id: user.id,
-          name: user.name,
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          city: user.city,
-          isPremiumUser: user.isPremiumUser,
-          isVerified: user.isVerified,
-        },
+        user
       });
     } catch (error) {
       throw error;
