@@ -25,6 +25,7 @@ import { RolesGuard } from './guard/roles.gurad';
 import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
 import { GetUser } from 'src/decorators/user.decorator';
+import { Public } from 'src/decorators/public.routes.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -34,12 +35,10 @@ export class AuthController {
     private readonly otpService: OtpService,
   ) {}
 
+  @Public()
   @Post('sign-up')
-  async signUp(
-    @Res() response,
-    @Body() payload: SignUpDto,
-  ) {
-    try {     
+  async signUp(@Res() response, @Body() payload: SignUpDto) {
+    try {
       const data = await this.authService.signUp(payload);
       return response.status(HttpStatus.OK).json({
         statusCode: HttpStatus.OK,
@@ -51,6 +50,7 @@ export class AuthController {
     }
   }
 
+  @Public()
   @Post('verify-otp')
   async verifyOtp(@Res() response, @Body() payload: VerifyOtpDto) {
     try {
@@ -61,6 +61,7 @@ export class AuthController {
     }
   }
 
+  @Public()
   @Post('resend-otp')
   async resSendOtp(@Body() payload: ResendOtpDto) {
     try {
@@ -71,6 +72,7 @@ export class AuthController {
     }
   }
 
+  @Public()
   @Post('forgot-password')
   async forgotPassword(@Res() response, @Body() payload: ForgotPasswordDto) {
     try {
@@ -87,6 +89,7 @@ export class AuthController {
     }
   }
 
+  @Public()
   @Put('reset-password')
   async resetPassword(@Res() response, @Body() payload: ResetPasswordDto) {
     try {
@@ -117,6 +120,7 @@ export class AuthController {
     }
   }
 
+  @Public()
   @Post('login')
   async signIn(@Body() userLoginDto: LoginDto, @Res() response) {
     try {
