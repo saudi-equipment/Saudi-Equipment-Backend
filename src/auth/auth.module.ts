@@ -33,7 +33,7 @@ import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
 
         return {
           secret: secretKey,
-          signOptions: { expiresIn: '2d' },
+          signOptions: { expiresIn: '10d' },
         };
       },
     }),

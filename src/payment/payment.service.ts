@@ -49,6 +49,10 @@ export class PaymentService {
     return response.data;
   }
 
+  async createPromotionPlan(payload: any){
+   return await this.createPromotionPlan(payload)
+  }
+
   async createSubscription(payload: any) {
     try {
       const existingSubscription = await this.paymentStore.existingSubscription(payload.userId);

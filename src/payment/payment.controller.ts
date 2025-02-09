@@ -36,6 +36,16 @@ export class PaymentController {
     }
   }
 
+  @Post('create-promotion')
+  async createPromotionPlan(@Body() payload: any) {
+    try {
+        const data = await this.paymentService.createPromotionPlan(payload);
+        return data
+    } catch (error) {
+      throw error;
+    }
+  }
+
   @Get('get-subscription')
   async getSubscription(@GetUser('id') userId: string) {
     try {

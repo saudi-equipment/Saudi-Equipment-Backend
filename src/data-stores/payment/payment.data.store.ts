@@ -21,6 +21,10 @@ export class PaymentStore {
     })
   }
 
+  async createPromotionPlan(payload: any){
+  
+  }
+
   async createSubscription(payload: any) {
     try {
       const {

@@ -32,8 +32,8 @@ export class AuthService {
 
   async signUp(payload: SignUpDto) {
     
-    validatePassword(payload.password, payload.confirmPassword);
     // await this.userService.findExistingUserByPhoneNumber(payload.phoneNumber)
+    validatePassword(payload.password, payload.confirmPassword);
     await this.userService.findExistingUser(payload.email);
   
     const hashedPassword = await hashPassword(payload.password);
