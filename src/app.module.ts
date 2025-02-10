@@ -12,6 +12,7 @@ import { AdModule } from './ads/ad.module';
 import { DigitalOceanModule } from './digital.ocean/digital.ocean.module';
 import { PaymentModule } from './payment/payment.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     DigitalOceanModule,
     PaymentModule,
     WebhooksModule,
+    AdminModule,
   ],
   controllers: [AppController, NotificationController],
   providers: [AppService, NotificationService],
