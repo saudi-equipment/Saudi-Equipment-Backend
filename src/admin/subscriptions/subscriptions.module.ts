@@ -4,11 +4,13 @@ import { SubscriptionStore } from 'src/data-stores/subscripions/subscriptions.st
 import { SubscriptionController } from './subscriptions.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Subscription, subscriptionSchema } from 'src/schemas/subscription/subscription.schema';
+import { AdPackage, adsPackageSchema } from 'src/schemas/ad';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Subscription.name, schema: subscriptionSchema },
+      { name: AdPackage.name, schema: adsPackageSchema },
     ]),
   ],
   providers: [SubscriptionsService, SubscriptionStore],

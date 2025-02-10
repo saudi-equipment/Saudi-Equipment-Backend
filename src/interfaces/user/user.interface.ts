@@ -13,6 +13,7 @@ export interface IUser extends Document {
   profilePicture?: string;
   role: UserRole;
   isVerified?: boolean;
+  isEmailVerified?: boolean;
   isActive?: boolean;
   isDeleted?: boolean;
   isBlocked?: boolean;

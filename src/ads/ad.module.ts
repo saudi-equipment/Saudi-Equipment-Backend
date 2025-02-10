@@ -1,4 +1,4 @@
-import { forwardRef, MiddlewareConsumer, Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { adsSchema } from 'src/schemas/ad/ad.schema';
 import { UserModule } from 'src/user/user.module';
