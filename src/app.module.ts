@@ -13,6 +13,7 @@ import { DigitalOceanModule } from './digital.ocean/digital.ocean.module';
 import { PaymentModule } from './payment/payment.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { AdminModule } from './admin/admin.module';
+import { UniversalLinksModule } from './universal-links/universal-links.module';
 
 @Module({
   imports: [
@@ -29,8 +30,9 @@ import { AdminModule } from './admin/admin.module';
     PaymentModule,
     WebhooksModule,
     AdminModule,
+    UniversalLinksModule
   ],
-  controllers: [AppController, NotificationController],
-  providers: [AppService, NotificationService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
