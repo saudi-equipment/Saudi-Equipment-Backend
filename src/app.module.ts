@@ -5,15 +5,12 @@ import { ConfigModule } from '@nestjs/config';
 import { ConfigurationModule } from './config/configuration.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { NotificationController } from './notification/notification.controller';
-import { NotificationService } from './notification/notification.service';
 import { NotificationModule } from './notification/notification.module';
 import { AdModule } from './ads/ad.module';
 import { DigitalOceanModule } from './digital.ocean/digital.ocean.module';
 import { PaymentModule } from './payment/payment.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { AdminModule } from './admin/admin.module';
-import { UniversalLinksModule } from './universal-links/universal-links.module';
 
 @Module({
   imports: [
@@ -30,7 +27,6 @@ import { UniversalLinksModule } from './universal-links/universal-links.module';
     PaymentModule,
     WebhooksModule,
     AdminModule,
-    UniversalLinksModule
   ],
   controllers: [AppController],
   providers: [AppService],
