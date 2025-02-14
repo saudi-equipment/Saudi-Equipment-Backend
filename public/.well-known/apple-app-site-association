@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "2LK927256D.com.saudi-equipment.app",
+        "paths": ["*"]
+      }
+    ]
+  }
+}

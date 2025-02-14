@@ -5,8 +5,6 @@ import { ConfigModule } from '@nestjs/config';
 import { ConfigurationModule } from './config/configuration.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { NotificationController } from './notification/notification.controller';
-import { NotificationService } from './notification/notification.service';
 import { NotificationModule } from './notification/notification.module';
 import { AdModule } from './ads/ad.module';
 import { DigitalOceanModule } from './digital.ocean/digital.ocean.module';
@@ -30,7 +28,7 @@ import { AdminModule } from './admin/admin.module';
     WebhooksModule,
     AdminModule,
   ],
-  controllers: [AppController, NotificationController],
-  providers: [AppService, NotificationService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
