@@ -11,6 +11,7 @@ import { DigitalOceanModule } from './digital.ocean/digital.ocean.module';
 import { PaymentModule } from './payment/payment.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { AdminModule } from './admin/admin.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AdminModule } from './admin/admin.module';
     PaymentModule,
     WebhooksModule,
     AdminModule,
+    NewsletterModule,
   ],
   controllers: [AppController],
   providers: [AppService],

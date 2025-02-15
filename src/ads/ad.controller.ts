@@ -31,7 +31,6 @@ import { UserRole } from 'src/enums';
 import { Roles } from 'src/decorators/roles.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
-import { CheckUserAccountGuard } from 'src/middleware/check.user.account.middleware';
 import { Public } from 'src/decorators/public.routes.decorator';
 
 @Controller('ad')
