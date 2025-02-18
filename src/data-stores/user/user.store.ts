@@ -77,6 +77,14 @@ export class UserStore {
     }
   }
 
+  async verifyEmail(email: string) {
+    try {
+      return await this.userModel.updateOne({ email: email }, { isEmailVerified: true });
+    } catch (error) {
+      throw error.message;
+    }
+  }
+
   async updateUser(
     userId: string,
     payload: UserUpdateDto,

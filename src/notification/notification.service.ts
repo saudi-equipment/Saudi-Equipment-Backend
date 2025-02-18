@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class NotificationService {
@@ -8,12 +9,26 @@ export class NotificationService {
   private apiKey: string;
   private sender: string;
   private emailApiUrl: string;
+  private transporter: nodemailer.Transporter;
 
   constructor(private readonly configService: ConfigService) {
     this.smsApiUrl = this.configService.get<string>('TAQNYAT_SMS_API_URL');
     this.emailApiUrl = this.configService.get<string>('TAQNYAT_EMAIL_API_URL');
     this.apiKey = this.configService.get<string>('TAQNYAT_API_KEY');
     this.sender = this.configService.get<string>('SENDER');
+  
+    this.transporter = nodemailer.createTransport({
+      host: this.configService.get<string>('SMTP_HOST'),
+      port: +this.configService.get<string>('SMTP_PORT'),
+      secure: this.configService.get<string>('SMTP_SECURE') === 'true',
+      auth: {
+        user: this.configService.get<string>('SMTP_USER'),
+        pass: this.configService.get<string>('SMTP_PASS'),
+      },
+      
+    });
+
+    console.log("auth....", this.transporter)
   }
 
   async sendSms(phoneNumber: string, code: string) {
@@ -41,48 +56,22 @@ export class NotificationService {
     }
   }
 
-  // async sendMail(email: string): Promise<void> {
-  //   try {
-  //     await axios.post(
-  //       this.emailApiUrl,
-  //       {
-  //         campaignName ='Prolines',
-  //         subject = 'Verify Email',
-  //         from = 'athar9157@gmail.com',
-  //         to = 'MrCoder105@gmail.com',
-  //         msg= <html><body><b>test</b></body></html>
-  //       },
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${this.apiKey}`,
-  //           'Content-Type': 'application/json',
-  //         },
-  //       },
-  //     )
-  //   } catch (error) {
-
-  //   }
-  // }
-
-  async sendMail(email: string): Promise<void> {
+  async sendMail(email: string, code: string) {
     try {
-      console.log("TOKEN", this.apiKey)
-      const url = `${this.emailApiUrl}&bearerTokens=${this.apiKey}&campaignName=Prolines&subject=Verify Email&from=athar9157@gmail.com&to=${email}&msg=${encodeURIComponent('<html><body><b>test</b></body></html>')}`;
-
-
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
+      const info = await this.transporter.sendMail({
+        from: `"Saudi Equipment" <${this.configService.get<string>('SMTP_USER')}>`,
+        to: email,
+        subject: 'Email Verification From the Saudi Equipment',
+        html: `Your Email Verification code is ${code}`,
       });
-
-      console.log('Email sent successfully:', response.data);
+      console.log('Email sent:', info.messageId);
+      return info;
     } catch (error) {
       console.error(
-        'Error sending email:',
+        'Error sending SMS:',
         error.response?.data || error.message,
       );
+      throw new Error('Failed to send SMS notification.');
     }
   }
 }

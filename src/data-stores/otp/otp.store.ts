@@ -16,6 +16,10 @@ export class OtpStore {
     return await this.otpModel.findOne({ phoneNumber: phoneNumber });
   }
 
+  async findExistingOtpByEmail(email: string): Promise<IOtp> {
+    return await this.otpModel.findOne({ email: email });
+  }
+
   async update(id: string, code: string): Promise<void> {
     await this.otpModel.updateOne(
       { _id: id },
@@ -62,6 +66,7 @@ export class OtpStore {
     code: string,
     otpExpireTime: string,
     phoneNumber: string,
+    email?: string
   ): Promise<IOtp | null> {
     const otp = new this.otpModel({
       code: code,
@@ -69,7 +74,9 @@ export class OtpStore {
       isExpired: false,
       otpExpireTime: otpExpireTime,
       phoneNumber: phoneNumber,
+      email: email
     });
+    console.log("Created Otp.............................", otp)
     return await otp.save();
   }
 

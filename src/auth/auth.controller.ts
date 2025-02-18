@@ -61,6 +61,17 @@ export class AuthController {
     }
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.USER)
+  @Post('send-verification-email')
+  async sendVerificationEmail(@GetUser() user: User) {
+    try {
+      return await this.otpService.sendVerificationEmail(user)
+    } catch (error) {
+      throw error;
+    }
+  }
+
   @Public()
   @Post('resend-otp')
   async resSendOtp(@Body() payload: ResendOtpDto) {

@@ -42,6 +42,16 @@ export class UserService {
     return await this.userStore.updatedPassword(hashedPassword, phoneNumber);
   }
 
+  async findUserByEmail(email: string): Promise<IUser | null> {
+    const existingEmail =  await this.userStore.findExistingUser(email);
+
+    if(!existingEmail){
+      throw new NotFoundException("Email is not exist")
+    }
+
+    return existingEmail
+  }
+
   async findExistingUser(email: string): Promise<IUser | null> {
     const user = await this.userStore.findExistingUser(email);
     if (user) {
@@ -61,6 +71,11 @@ export class UserService {
   async verifyUser(id: string) {
     this.findUserById(id);
     return await this.userStore.verifyUser(id);
+  }
+
+  async verifyEmail(email: string) {
+    this.findUserByEmail(email);
+    return await this.userStore.verifyEmail(email);
   }
 
   async updateUser(
