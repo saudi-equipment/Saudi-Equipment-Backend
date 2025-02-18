@@ -68,6 +68,8 @@ export class OtpStore {
     phoneNumber: string,
     email?: string
   ): Promise<IOtp | null> {
+
+    console.log("Eamil", email)
     const otp = new this.otpModel({
       code: code,
       isUsed: false,

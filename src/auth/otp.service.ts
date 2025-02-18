@@ -85,6 +85,7 @@ export class OtpService {
           otpResponse = await this.otpStore.createOtp(
             code,
             otpExpireTime,
+            existingUser.phoneNumber,
             existingUser.email,
           );
         }

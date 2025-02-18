@@ -19,12 +19,17 @@ export class NotificationService {
   
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
-      port: +this.configService.get<string>('SMTP_PORT'),
-      secure: this.configService.get<string>('SMTP_SECURE') === 'true',
+      port: this.configService.get<string>('SMTP_PORT'),
+      secure: this.configService.get<string>('SMTP_SECURE'),
       auth: {
         user: this.configService.get<string>('SMTP_USER'),
         pass: this.configService.get<string>('SMTP_PASS'),
       },
+      // tls: {
+      //   rejectUnauthorized: false, // Add this if there are SSL/TLS certificate issues
+      // },
+      debug: true,  // Logs SMTP communication
+      logger: true, // Logs SMTP activities
       
     });
 
@@ -58,13 +63,15 @@ export class NotificationService {
 
   async sendMail(email: string, code: string) {
     try {
+      console.log("EMAIL.............", email)
+      console.log("Code.............", code)
       const info = await this.transporter.sendMail({
-        from: `"Saudi Equipment" <${this.configService.get<string>('SMTP_USER')}>`,
-        to: email,
+        from: "noreply@saudi-equipment.com",
+        to: "athar123@yopmail.com",
         subject: 'Email Verification From the Saudi Equipment',
-        html: `Your Email Verification code is ${code}`,
+        html: `<p>Your verification code is: <strong>${code}</strong></p>`
       });
-      console.log('Email sent:', info.messageId);
+      console.log('Email sent:', info);
       return info;
     } catch (error) {
       console.error(
