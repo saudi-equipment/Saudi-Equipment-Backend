@@ -7,15 +7,16 @@ import {
   Param,
   Patch,
   Put,
+  Query,
   Req,
   Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { Request} from 'express';
+import { Request } from 'express';
 import { UserService } from './user.service';
-import { UserUpdateDto } from './dtos';
+import { GetUserListQueryDto, UserUpdateDto } from './dtos';
 import { RolesGuard } from 'src/auth/guard/roles.gurad';
 import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
@@ -45,7 +46,11 @@ export class UserController {
   ) {
     try {
       await this.expireAdsMiddleware.use(req, response, () => {});
-      const data = await this.userService.updateUser(userId, payload, profilePicture);
+      const data = await this.userService.updateUser(
+        userId,
+        payload,
+        profilePicture,
+      );
       return response.status(HttpStatus.OK).json(data);
     } catch (error) {
       throw error;
@@ -102,6 +107,13 @@ export class UserController {
     }
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  
+  @Get('get-user-list')
+  async getUserList(@Query() query: GetUserListQueryDto) {
+    return await this.userService.getUserList(query);
+  }
 
   @Public()
   @Get(':id')

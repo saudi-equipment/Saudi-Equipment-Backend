@@ -1,3 +1,4 @@
+import { query } from 'express';
 import { Subscription } from './../schemas/subscription/subscription.schema';
 import {
   BadRequestException,
@@ -10,9 +11,10 @@ import {
 import { SignUpDto } from 'src/auth/dtos';
 import { UserStore } from 'src/data-stores/user/user.store';
 import { IUser } from 'src/interfaces/user/user.interface';
-import { UserUpdateDto } from './dtos';
+import { GetUserListQueryDto, UserUpdateDto } from './dtos';
 import { User } from 'src/schemas/user/user.schema';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
+import { getPagination } from 'src/utils';
 
 @Injectable()
 export class UserService {
@@ -43,13 +45,13 @@ export class UserService {
   }
 
   async findUserByEmail(email: string): Promise<IUser | null> {
-    const existingEmail =  await this.userStore.findExistingUser(email);
+    const existingEmail = await this.userStore.findExistingUser(email);
 
-    if(!existingEmail){
-      throw new NotFoundException("Email is not exist")
+    if (!existingEmail) {
+      throw new NotFoundException('Email is not exist');
     }
 
-    return existingEmail
+    return existingEmail;
   }
 
   async findExistingUser(email: string): Promise<IUser | null> {
@@ -180,10 +182,11 @@ export class UserService {
         throw new NotFoundException('User is not found');
       }
 
-      const updatedUser = await this.userStore.activateOrDeactivateAccount(user);
+      const updatedUser =
+        await this.userStore.activateOrDeactivateAccount(user);
       updatedUser.password = undefined;
       updatedUser.ads = undefined;
-      updatedUser.subscriptions = undefined
+      updatedUser.subscriptions = undefined;
       return updatedUser;
     } catch (error) {
       throw error;
@@ -191,7 +194,6 @@ export class UserService {
   }
 
   async checkUserAccount(user: User) {
-  
     if (user.isVerified === false) {
       return {
         statusCode: HttpStatus.FORBIDDEN,
@@ -199,7 +201,7 @@ export class UserService {
         message: 'User is not verified',
       };
     }
-  
+
     if (user.isDeleted === true) {
       return {
         statusCode: HttpStatus.NOT_FOUND,
@@ -207,7 +209,7 @@ export class UserService {
         message: 'User is not found',
       };
     }
-  
+
     if (user.isActive === false) {
       return {
         statusCode: HttpStatus.FORBIDDEN,
@@ -215,14 +217,30 @@ export class UserService {
         message: 'Your account is deactivated. Please activate the account.',
       };
     }
-  
+
     return {
       statusCode: HttpStatus.OK,
       status: 'active',
       message: 'User account is active.',
     };
   }
-  
+
+  async getUserList(query: GetUserListQueryDto) {
+    try {
+      const { page, limit } = query;
+      const { skip, limit: currentLimit } = getPagination({ page, limit });
+
+      const users = await this.userStore.getUserList(query, skip, currentLimit);
+
+      if (!users) {
+        throw new NotFoundException('Users not found');
+      }
+
+      return users;
+    } catch (error) {
+      throw error;
+    }
+  }
 
   async getUserWithAd(id: string): Promise<IUser | null> {
     try {

@@ -18,22 +18,20 @@ export class NotificationService {
     this.sender = this.configService.get<string>('SENDER');
   
     this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST'),
-      port: this.configService.get<string>('SMTP_PORT'),
-      secure: this.configService.get<string>('SMTP_SECURE'),
+      host: 'smtp.gmail.com',
+      port: 587, // Use 465 for SSL or 587 for STARTTLS
+      secure: false, // false for STARTTLS, true for SSL (465)
       auth: {
-        user: this.configService.get<string>('SMTP_USER'),
-        pass: this.configService.get<string>('SMTP_PASS'),
+        user: this.configService.get<string>('SMTP_USER'), // Your Gmail email
+        pass: this.configService.get<string>('SMTP_PASS'), // Your App Password
       },
-      // tls: {
-      //   rejectUnauthorized: false, // Add this if there are SSL/TLS certificate issues
-      // },
-      debug: true,  // Logs SMTP communication
-      logger: true, // Logs SMTP activities
-      
+      tls: {
+        rejectUnauthorized: false, // Avoid SSL/TLS errors
+      },
+      debug: true,
+      logger: true,
     });
-
-    console.log("auth....", this.transporter)
+    
   }
 
   async sendSms(phoneNumber: string, code: string) {
@@ -66,7 +64,7 @@ export class NotificationService {
       console.log("EMAIL.............", email)
       console.log("Code.............", code)
       const info = await this.transporter.sendMail({
-        from: "noreply@saudi-equipment.com",
+        from: "info@saudi-equipment.com",
         to: "athar123@yopmail.com",
         subject: 'Email Verification From the Saudi Equipment',
         html: `<p>Your verification code is: <strong>${code}</strong></p>`
@@ -75,10 +73,10 @@ export class NotificationService {
       return info;
     } catch (error) {
       console.error(
-        'Error sending SMS:',
+        'Error sending email:',
         error.response?.data || error.message,
       );
-      throw new Error('Failed to send SMS notification.');
+      throw new Error('Failed to send email notification.');
     }
   }
 }
