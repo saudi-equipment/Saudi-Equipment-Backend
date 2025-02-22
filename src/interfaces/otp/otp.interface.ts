@@ -3,7 +3,8 @@ import { OtpContext, OtpType } from 'src/enums';
 export interface IOtp {
   id: string,
   code: string;
-  phoneNumber: string,
+  phoneNumber?: string,
+  email?: string,
   isUsed: boolean;
   isExpired: boolean;
   expireTime: string;

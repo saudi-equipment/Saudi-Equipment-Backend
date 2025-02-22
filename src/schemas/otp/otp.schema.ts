@@ -19,6 +19,9 @@ export class Otp extends Document {
   @Prop({ required: true })
   phoneNumber: string;
 
+  @Prop({ required: false })
+  email: string;
+
   @Prop({required: true, enum: OtpContext, default: OtpContext.PHONENUMBERVERIFICATION})
   context: OtpContext;
 

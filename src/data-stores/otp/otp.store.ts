@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { ResetPasswordDto } from 'src/auth/dtos';
 import { IOtp } from 'src/interfaces/otp/otp.interface';
 
 @Injectable()
@@ -14,6 +13,10 @@ export class OtpStore {
 
   async findExitingOtpByPhoneNumber(phoneNumber: string): Promise<IOtp> {
     return await this.otpModel.findOne({ phoneNumber: phoneNumber });
+  }
+
+  async findExistingOtpByEmail(email: string): Promise<IOtp> {
+    return await this.otpModel.findOne({ email: email });
   }
 
   async update(id: string, code: string): Promise<void> {
@@ -62,13 +65,16 @@ export class OtpStore {
     code: string,
     otpExpireTime: string,
     phoneNumber: string,
+    email?: string
   ): Promise<IOtp | null> {
+
     const otp = new this.otpModel({
       code: code,
       isUsed: false,
       isExpired: false,
       otpExpireTime: otpExpireTime,
       phoneNumber: phoneNumber,
+      email: email
     });
     return await otp.save();
   }

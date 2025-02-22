@@ -20,8 +20,6 @@ export class WebhooksController {
         throw new HttpException('Invalid payload', HttpStatus.BAD_REQUEST);
       }
 
-      console.log('Webhook received:', payload);
-
       if (payload.status === 'paid') {
         // await this.paymentService.processSuccessfulPayment(payload);
       }
