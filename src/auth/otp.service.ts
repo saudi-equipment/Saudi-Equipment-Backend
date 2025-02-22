@@ -50,10 +50,10 @@ export class OtpService {
           );
         }
 
-        // await this.notificationService.sendSms(
-        //   otpResponse.phoneNumber,
-        //   otpResponse.code,
-        // );
+        await this.notificationService.sendSms(
+          otpResponse.phoneNumber,
+          otpResponse.code,
+        );
         return { otpResponse, existingUser };
       } else {
         throw new Error('User not found');
