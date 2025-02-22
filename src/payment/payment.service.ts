@@ -23,7 +23,6 @@ export class PaymentService {
   }
 
   async createPayment(payload: CreatePaymentDto) {
-    console.log('KEY', this.moyasarSecretKey);
     const { amount, currency, description } = payload;
     const response = await axios.post(
       'https://api.moyasar.com/v1/payments',

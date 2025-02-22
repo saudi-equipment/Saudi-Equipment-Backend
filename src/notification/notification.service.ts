@@ -8,30 +8,25 @@ export class NotificationService {
   private smsApiUrl: string;
   private apiKey: string;
   private sender: string;
-  private emailApiUrl: string;
   private transporter: nodemailer.Transporter;
 
   constructor(private readonly configService: ConfigService) {
     this.smsApiUrl = this.configService.get<string>('TAQNYAT_SMS_API_URL');
-    this.emailApiUrl = this.configService.get<string>('TAQNYAT_EMAIL_API_URL');
     this.apiKey = this.configService.get<string>('TAQNYAT_API_KEY');
     this.sender = this.configService.get<string>('SENDER');
-  
+
     this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587, // Use 465 for SSL or 587 for STARTTLS
-      secure: false, // false for STARTTLS, true for SSL (465)
+      host: this.configService.get<string>('SMTP_HOST'),
+      port: this.configService.get<string>('SMTP_PORT'),
+      secure: this.configService.get<string>('SMTP_SECURE'),
       auth: {
-        user: this.configService.get<string>('SMTP_USER'), // Your Gmail email
-        pass: this.configService.get<string>('SMTP_PASS'), // Your App Password
+        user: this.configService.get<string>('SMTP_USER'),
+        pass: this.configService.get<string>('SMTP_PASS'),
       },
       tls: {
-        rejectUnauthorized: false, // Avoid SSL/TLS errors
+        rejectUnauthorized: false,
       },
-      debug: true,
-      logger: true,
     });
-    
   }
 
   async sendSms(phoneNumber: string, code: string) {
@@ -61,15 +56,27 @@ export class NotificationService {
 
   async sendMail(email: string, code: string) {
     try {
-      console.log("EMAIL.............", email)
-      console.log("Code.............", code)
       const info = await this.transporter.sendMail({
-        from: "info@saudi-equipment.com",
-        to: "athar123@yopmail.com",
+        from: this.configService.get<string>('SMTP_USER'),
+        to: email,
         subject: 'Email Verification From the Saudi Equipment',
-        html: `<p>Your verification code is: <strong>${code}</strong></p>`
+        html: `
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
+          <h2 style="color: #333; text-align: center;">Email Verification</h2>
+          <p style="font-size: 16px; color: #555; text-align: center;">
+            Thank you for verifying email! Please use the following verification code to verify your email.
+          </p>
+          <div style="text-align: center; margin: 20px 0;">
+            <span style="font-size: 24px; font-weight: bold; color: #007bff; background: #eef2ff; padding: 10px 20px; border-radius: 5px; display: inline-block;">
+              ${code}
+            </span>
+          </div>
+          <p style="font-size: 14px; color: #777; text-align: center;">
+            If you did not request this email, please ignore it.
+          </p>
+        </div>
+      `,
       });
-      console.log('Email sent:', info);
       return info;
     } catch (error) {
       console.error(

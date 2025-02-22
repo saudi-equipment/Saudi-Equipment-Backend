@@ -76,8 +76,7 @@ export class AuthController {
   @Post('resend-otp')
   async resSendOtp(@Body() payload: ResendOtpDto) {
     try {
-      const phoneNumber = payload.phoneNumber;
-      return await this.otpService.resendOpt(phoneNumber);
+      return await this.otpService.resendOpt(payload);
     } catch (error) {
       throw error;
     }

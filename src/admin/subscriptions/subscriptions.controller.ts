@@ -37,7 +37,6 @@ export class SubscriptionController {
 
   @Get('package/:id')
   async getPackageById(@Param('id') id: string) {
-    console.log("ID OF ", id)
     const packageData = await this.subscriptionService.getPackageById(id);
     if (!packageData) {
       throw new NotFoundException(`Package with ID ${id} not found`);

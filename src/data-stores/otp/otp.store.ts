@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { ResetPasswordDto } from 'src/auth/dtos';
 import { IOtp } from 'src/interfaces/otp/otp.interface';
 
 @Injectable()
@@ -69,7 +68,6 @@ export class OtpStore {
     email?: string
   ): Promise<IOtp | null> {
 
-    console.log("Eamil", email)
     const otp = new this.otpModel({
       code: code,
       isUsed: false,
@@ -78,7 +76,6 @@ export class OtpStore {
       phoneNumber: phoneNumber,
       email: email
     });
-    console.log("Created Otp.............................", otp)
     return await otp.save();
   }
 

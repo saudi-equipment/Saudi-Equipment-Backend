@@ -13,6 +13,7 @@ import {
 import { VerifyOtpDto } from './dtos/verify.otp.dto';
 import { IOtp } from 'src/interfaces/otp/otp.interface';
 import { User } from 'src/schemas/user/user.schema';
+import { ResendOtpDto } from './dtos';
 
 @Injectable()
 export class OtpService {
@@ -49,10 +50,10 @@ export class OtpService {
           );
         }
 
-        await this.notificationService.sendSms(
-          otpResponse.phoneNumber,
-          otpResponse.code,
-        );
+        // await this.notificationService.sendSms(
+        //   otpResponse.phoneNumber,
+        //   otpResponse.code,
+        // );
         return { otpResponse, existingUser };
       } else {
         throw new Error('User not found');
@@ -136,15 +137,15 @@ export class OtpService {
         throw new ForbiddenException('OTP is expired');
       }
 
-      if (user.isVerified == true) {
+      if (user.isVerified == true && user.isEmailVerified == true) {
         await this.otpStore.update(otpId, code);
         await this.otpStore.deleteOtp(otpId);
         return {
           message: 'User verification successful',
         };
       } 
-        
-        if (email) {
+       
+        if (user.email) {
           await this.userService.verifyEmail(user.email);
         } else {
           await this.userService.verifyUser(user.id);
@@ -161,10 +162,18 @@ export class OtpService {
     }
   }
 
-  async resendOpt(phoneNumber: string) {
+  async resendOpt(payload: ResendOtpDto) {
     const otpExpireTime = generateExpireTime();
-    const existingOtp =
-      await this.otpStore.findExitingOtpByPhoneNumber(phoneNumber);
+    const {email, phoneNumber } = payload;
+    let existingOtp;
+    
+    if(phoneNumber){
+      existingOtp = await this.otpStore.findExitingOtpByPhoneNumber(phoneNumber);
+    }
+
+    if(email){
+      existingOtp = await this.otpStore.findExistingOtpByEmail(email);
+    }
 
     if (!existingOtp) {
       throw new NotFoundException('Otp not found');
@@ -176,7 +185,14 @@ export class OtpService {
       otpExpireTime,
       existingOtp.id,
     );
-    await this.notificationService.sendSms(phoneNumber, otpCode);
+
+    if(phoneNumber){
+     await this.notificationService.sendSms(phoneNumber, otpCode);
+    }
+
+    if(email){
+     await this.notificationService.sendMail(email, otpCode);
+    }
 
     return {
       otpId: updatedOtp.id,
