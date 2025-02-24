@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Patch,
+  Post,
   Put,
   Query,
   Req,
@@ -16,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UserService } from './user.service';
-import { GetUserListQueryDto, UserUpdateDto } from './dtos';
+import { AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
 import { RolesGuard } from 'src/auth/guard/roles.gurad';
 import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
@@ -109,11 +110,18 @@ export class UserController {
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  
   @Get('get-user-list')
   async getUserList(@Query() query: GetUserListQueryDto) {
     return await this.userService.getUserList(query);
   }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('add-user')
+  async addUserByAdmin(@Body() payload: AddUser) {
+    return await this.userService.addUserByAdmin(payload);
+  }
+
 
   @Public()
   @Get(':id')

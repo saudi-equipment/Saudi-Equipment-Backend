@@ -11,7 +11,7 @@ import {
 import { SignUpDto } from 'src/auth/dtos';
 import { UserStore } from 'src/data-stores/user/user.store';
 import { IUser } from 'src/interfaces/user/user.interface';
-import { GetUserListQueryDto, UserUpdateDto } from './dtos';
+import { AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
 import { User } from 'src/schemas/user/user.schema';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
 import { getPagination } from 'src/utils';
@@ -49,6 +49,16 @@ export class UserService {
 
     if (!existingEmail) {
       throw new NotFoundException('Email is not exist');
+    }
+
+    return existingEmail;
+  }
+
+  async findAdminByEmail(email: string): Promise<IUser | null> {
+    const existingEmail = await this.userStore.findAdminByEmail(email);
+
+    if (!existingEmail) {
+      throw new NotFoundException('User is not exist');
     }
 
     return existingEmail;
@@ -237,6 +247,14 @@ export class UserService {
       }
 
       return users;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async addUserByAdmin(payload: AddUser) {
+    try {
+      return await this.userStore.addUserByAdmin(payload);
     } catch (error) {
       throw error;
     }

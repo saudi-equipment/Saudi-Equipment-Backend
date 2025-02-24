@@ -13,6 +13,7 @@ import {
   LoginDto,
   ResetPasswordDto,
   ChangePasswordDto,
+  AdminLoginDto,
 } from './dtos';
 import { UserService } from 'src/user/user.service';
 import { OtpService } from './otp.service';
@@ -84,7 +85,40 @@ export class AuthService {
       token,
       otpId: null,
       user,
-      message: 'Login successful',
+      message: 'Login successfully',
+    };
+  }
+
+  async adminSignIn(
+    adminLoginDto: AdminLoginDto,
+  ): Promise<{ token: string; otpId: string; user: IUser; message: string }> {
+    const user = await this.userService.findAdminByEmail(
+      adminLoginDto.email,
+    );
+
+    if (user.isDeleted === true) {
+      throw new UnauthorizedException('Admin Not Found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      adminLoginDto.password,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { id: user.id, email: user.email };
+    const token = this.jwtService.sign(payload);
+
+    user.password = undefined;
+
+    return {
+      token,
+      otpId: null,
+      user,
+      message: 'Login successfully',
     };
   }
 
