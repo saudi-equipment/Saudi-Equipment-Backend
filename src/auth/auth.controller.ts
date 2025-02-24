@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
+  AdminLoginDto,
   ChangePasswordDto,
   ForgotPasswordDto,
   LoginDto,
@@ -150,6 +151,33 @@ export class AuthController {
       return response.status(HttpStatus.OK).json({
         statusCode: HttpStatus.OK,
         message: 'Login successful',
+        accessToken: token,
+        user
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Public()
+  @Post('admin-login')
+  async adminSignIn(@Body() adminLoginDto: AdminLoginDto, @Res() response) {
+    try {
+      const { token, message, user } =
+        await this.authService.adminSignIn(adminLoginDto);
+
+      if (token === null) {
+        return response.status(HttpStatus.FORBIDDEN).json({
+          statusCode: HttpStatus.FORBIDDEN,
+          message: message,
+          accessToken: null,
+          userId: user.id,
+        });
+      }
+
+      return response.status(HttpStatus.OK).json({
+        statusCode: HttpStatus.OK,
+        message: 'Login successfully',
         accessToken: token,
         user
       });
