@@ -18,7 +18,7 @@ export class NotificationService {
     this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
       port: this.configService.get<string>('SMTP_PORT'),
-      secure: this.configService.get<string>('SMTP_SECURE'),
+      secure: this.configService.get<boolean>('SMTP_SECURE'),
       auth: {
         user: this.configService.get<string>('SMTP_USER'),
         pass: this.configService.get<string>('SMTP_PASS'),
@@ -55,6 +55,7 @@ export class NotificationService {
   }
 
   async sendMail(email: string, code: string) {
+
     try {
       const info = await this.transporter.sendMail({
         from: this.configService.get<string>('SMTP_USER'),
@@ -79,11 +80,7 @@ export class NotificationService {
       });
       return info;
     } catch (error) {
-      console.error(
-        'Error sending email:',
-        error.response?.data || error.message,
-      );
-      throw new Error('Failed to send email notification.');
+      throw error
     }
   }
 }

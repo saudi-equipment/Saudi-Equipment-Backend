@@ -67,7 +67,6 @@ export class OtpService {
     try {
       let otpResponse: IOtp;
       const existingUser = await this.userService.findUserByEmail(user.email);
-      console.log("existing user........................", existingUser)
       existingUser.password = undefined;
       const code = generateSixDigitCode();
       const otpExpireTime = generateExpireTime();

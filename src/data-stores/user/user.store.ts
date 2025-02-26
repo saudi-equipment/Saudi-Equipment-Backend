@@ -223,6 +223,9 @@ export class UserStore {
                 },
               },
             },
+            {
+            $sort: {createdAt: -1}
+            }
           ],
           as: 'ads',
         },
