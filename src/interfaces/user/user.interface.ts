@@ -17,6 +17,10 @@ export interface IUser extends Document {
   isActive?: boolean;
   isDeleted?: boolean;
   isBlocked?: boolean;
+  metaLink?: string;
+  xLink?: string;
+  whatsAppLink?: string;
+  instaLink?: string;
   isPremiumUser?: boolean;
   subscriptions?: Subscription,
   otpId?: string,

@@ -15,11 +15,13 @@ import { AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
 import { User } from 'src/schemas/user/user.schema';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
 import { getPagination } from 'src/utils';
+import { AdStore } from 'src/data-stores/ad/ad.store';
 
 @Injectable()
 export class UserService {
   constructor(
     private readonly userStore: UserStore,
+    private readonly adStore: AdStore,
     private readonly digitalOceanService: DigitalOceanService,
   ) {}
 
@@ -74,11 +76,14 @@ export class UserService {
 
   async findUserById(id: string): Promise<IUser | null> {
     const user = await this.userStore.findById(id);
-    if (!user) {
-      throw new NotFoundException('User with ID not found');
+  
+    if (!user || user.isDeleted) {
+      throw new NotFoundException("User is not found");
     }
+  
     return user;
   }
+  
 
   async verifyUser(id: string) {
     this.findUserById(id);
@@ -152,13 +157,8 @@ export class UserService {
 
   async deleteAccount(user: User) {
     try {
-      if (user.isDeleted === true) {
-        return {
-          message: 'User account deleted.',
-        };
-      }
-
       await this.userStore.deleteUser(user);
+      await this.adStore.deleteUserAds(user)
       return {
         message: 'Account deleted successfylly',
       };

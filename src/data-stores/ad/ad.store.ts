@@ -1,7 +1,7 @@
 import { User } from '../../schemas/user/user.schema';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { DeleteResult, Model, Types } from 'mongoose';
 import {
   CreateAdDto,
   GetAllAdQueryDto,
@@ -371,6 +371,10 @@ export class AdStore {
     } catch (error) {
       throw error;
     }
+  }
+
+  async deleteUserAds(user: User) {
+    return await this.adModel.deleteMany({ createdBy: user.id });
   }
 
   async reportAd(

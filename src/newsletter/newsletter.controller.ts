@@ -14,6 +14,7 @@ import { UserRole } from 'src/enums';
 import { User } from 'src/schemas/user/user.schema';
 import { GetUser } from 'src/decorators/user.decorator';
 import { ContactUsDto } from './dtos/contact.us.dto';
+import { Public } from 'src/decorators/public.routes.decorator';
 
 
 @Controller('newsletter')
@@ -22,8 +23,7 @@ export class NewsletterController {
     private readonly newsLetterService: NewsletterService,
   ) {}
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.USER)
+  @Public()
   @Post('contact-us')
   async createContactUs(
     @Req() req: Request,

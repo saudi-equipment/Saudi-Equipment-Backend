@@ -161,9 +161,9 @@ export class PaymentStore {
       const ad = await this.adModel.findById({ _id: adId, createdBy: userId });
       if (!ad) throw new Error('Ad not found');
 
-      // if(ad.isPromoted){
-      //   throw new ConflictException('Ad already promoted')
-      // }
+      if(ad.isPromoted){
+        throw new ConflictException('Ad already promoted')
+      }
 
       const currentDate = new Date();
       let promotionEndDate: Date;
