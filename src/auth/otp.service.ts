@@ -50,10 +50,10 @@ export class OtpService {
           );
         }
 
-        await this.notificationService.sendSms(
-          otpResponse.phoneNumber,
-          otpResponse.code,
-        );
+        // await this.notificationService.sendSms(
+        //   otpResponse.phoneNumber,
+        //   otpResponse.code,
+        // );
         return { otpResponse, existingUser };
       } else {
         throw new Error('User not found');
@@ -107,55 +107,29 @@ export class OtpService {
     try {
       const { otpId, code, userId, email } = payload;
       const currentTime = new Date();
+
       const existingOtp = await this.otpStore.findOtpById(otpId);
+      if (!existingOtp) throw new NotFoundException('OTP not found');
+      if (existingOtp.isUsed) throw new ForbiddenException('OTP is already used');
+      if (existingOtp.code !== code) throw new ForbiddenException('Invalid OTP');
+      if (new Date(existingOtp.expireTime) <= currentTime) throw new ForbiddenException('OTP is expired');
 
-      if (!existingOtp) {
-        throw new NotFoundException('OTP not found');
+      const user = userId ? await this.userService.findUserById(userId) : null;
+      if (!user) throw new NotFoundException('User not found');
+
+      if (user.phoneNumber && !user.isVerified) {
+        await this.userService.verifyUser(user.id);
+      }
+    
+      if (email && !user.isEmailVerified) {
+        await this.userService.verifyEmail(user.email);
       }
 
-      let user = null;
-      if (userId) {
-        user = await this.userService.findUserById(userId);
-      } else if (email) {
-        user = await this.userService.findUserByEmail(email);
-      }
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }  
-
-      if (existingOtp.isUsed == true) {
-        throw new ForbiddenException('OTP is already used');
-      }
-
-      if (existingOtp.code !== code) {
-        throw new ForbiddenException('Invalid OTP');
-      }
-
-      if (new Date(existingOtp.expireTime) <= currentTime) {
-        throw new ForbiddenException('OTP is expired');
-      }
-
-      if (user.isVerified == true && user.isEmailVerified == true) {
-        await this.otpStore.update(otpId, code);
-        await this.otpStore.deleteOtp(otpId);
-        return {
-          message: 'User verification successful',
-        };
-      } 
-       
-        if (user.email) {
-          await this.userService.verifyEmail(user.email);
-        } else {
-          await this.userService.verifyUser(user.id);
-        }
-
-        await this.otpStore.update(otpId, code);
-        await this.otpStore.deleteOtp(otpId);
-        return {
-          message: 'User verification successful',
-        };
-
+      await this.otpStore.update(otpId, code);
+      await this.otpStore.deleteOtp(otpId);
+      return {
+        message: 'User verification successful',
+      };
     } catch (error) {
       throw error;
     }
@@ -163,42 +137,29 @@ export class OtpService {
 
   async resendOpt(payload: ResendOtpDto) {
     const otpExpireTime = generateExpireTime();
-    const {email, phoneNumber } = payload;
-    let existingOtp;
-    
-    if(phoneNumber){
-      existingOtp = await this.otpStore.findExitingOtpByPhoneNumber(phoneNumber);
-    }
-
-    if(email){
-      existingOtp = await this.otpStore.findExistingOtpByEmail(email);
-    }
-
-    if (!existingOtp) {
-      throw new NotFoundException('Otp not found');
-    }
-
+    const { email, phoneNumber } = payload;
+  
+    const existingOtp = phoneNumber
+      ? await this.otpStore.findExitingOtpByPhoneNumber(phoneNumber)
+      : email
+      ? await this.otpStore.findExistingOtpByEmail(email)
+      : null;
+  
+    if (!existingOtp) throw new NotFoundException('OTP not found');
+  
     const otpCode = generateSixDigitCode();
-    const updatedOtp = await this.otpStore.updateOtp(
-      otpCode,
-      otpExpireTime,
-      existingOtp.id,
-    );
-
-    if(phoneNumber){
-     await this.notificationService.sendSms(phoneNumber, otpCode);
-    }
-
-    if(email){
-     await this.notificationService.sendMail(email, otpCode);
-    }
-
+    const updatedOtp = await this.otpStore.updateOtp(otpCode, otpExpireTime, existingOtp.id);
+  
+    if (phoneNumber) await this.notificationService.sendSms(phoneNumber, otpCode);
+    if (email) await this.notificationService.sendMail(email, otpCode);
+  
     return {
       otpId: updatedOtp.id,
       otpCode: updatedOtp.code,
       message: 'OTP sent successfully',
     };
   }
+  
 
   async deleteOtp(otpId: string) {
     return this.otpStore.deleteOtp(otpId);

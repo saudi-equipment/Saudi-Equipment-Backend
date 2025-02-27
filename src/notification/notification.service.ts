@@ -55,7 +55,6 @@ export class NotificationService {
   }
 
   async sendMail(email: string, code: string) {
-
     try {
       const info = await this.transporter.sendMail({
         from: this.configService.get<string>('SMTP_USER'),
