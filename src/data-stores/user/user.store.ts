@@ -247,7 +247,15 @@ export class UserStore {
         {
           _id: user.id,
         },
-        { email: `${date}${user.email}`, isDeleted: true },
+        { 
+          $set: { 
+            ads: [], 
+            subscriptions: [], 
+            email: `${date}${user.email}`, 
+            phoneNumber: `${date}${user.phoneNumber}`, 
+            isDeleted: true 
+          }
+        }
       );
     } catch (error) {
       throw new error();

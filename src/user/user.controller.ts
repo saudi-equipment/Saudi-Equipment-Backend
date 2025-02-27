@@ -68,12 +68,13 @@ export class UserController {
   ) {
     try {
       await this.expireAdsMiddleware.use(req, response, () => {});
-      return await this.userService.deleteAccount(user);
+      const result = await this.userService.deleteAccount(user);
+      return response.status(200).json(result); 
     } catch (error) {
-      throw error;
+      return response.status(500).json({ message: error.message });
     }
   }
-
+  
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Get('profile')

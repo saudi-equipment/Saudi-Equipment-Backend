@@ -53,10 +53,6 @@ export class AuthService {
       userLoginDto.phoneNumber,
     );
 
-    if (user.isDeleted === true) {
-      throw new UnauthorizedException('User Not Found');
-    }
-
     if (user.isVerified === false) {
       const otp = await this.otpService.sendOtp(userLoginDto.phoneNumber);
       return {
@@ -155,6 +151,7 @@ export class AuthService {
   async resetPassword(payload: ResetPasswordDto) {
     try {
       const user = await this.userService.findUserById(payload.userId);
+
       const isPasswordMatch = bcrypt.compareSync(
         payload.newPassword,
         user.password,
@@ -177,7 +174,7 @@ export class AuthService {
         userId: user.id,
       };
     } catch (error) {
-      throw new Error(error.message || 'Error resetting password');
+      throw error
     }
   }
 }
