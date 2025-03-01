@@ -189,6 +189,28 @@ export class AdController {
     }
   }
 
+  
+  @Patch(':id/sell')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.USER)
+  async updateAdSellStatus(
+    @Req() req: Request,
+    @GetUser() user: User,
+    @Res() response,
+    @Param('id') id: string,
+  ) {
+    try {
+      await this.expireAdsMiddleware.use(req, response, () => {});
+      const data = await this.adService.updateAdSellStatus(user, id);
+      return response.status(HttpStatus.OK).json({ ad: data });
+    } catch (error) {
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: error.message || 'Ad Not found',
+      });
+    }
+  }
+
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Delete(':id')

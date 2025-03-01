@@ -72,6 +72,23 @@ export class AdStore {
     }
   }
 
+  async updateAdSellStatus(user: User, id: string): Promise<IAd> {
+    const existingAd = await this.adModel.findOne({
+      _id: new Types.ObjectId(id),
+      createdBy: user.id,
+    });
+  
+    if (!existingAd) {
+      throw new Error('Ad not found or unauthorized');
+    }
+  
+    existingAd.isSold = true;
+    existingAd.soldDate = new Date();
+  
+    await existingAd.save();
+    return existingAd;
+  }
+  
   async repostAd(user: User, id: string): Promise<IAd> {
     const existingAd = await this.adModel.findOne({
       _id: new Types.ObjectId(id),

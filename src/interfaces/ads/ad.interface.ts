@@ -21,6 +21,8 @@ export interface IAd {
   youTubeLink: string;
   views: number;
   userId: string;
+  isSold?:boolean,
+  soldDate?: Date, 
   duration?: string;
   paymentType?: string;
   paymentCompany?:string;

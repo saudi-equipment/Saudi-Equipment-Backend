@@ -161,6 +161,16 @@ export class AdService {
     }
   }
 
+  async updateAdSellStatus(user: User, id: string): Promise<IAd> {
+    try {
+      const repostAd = await this.adStore.updateAdSellStatus(user, id);
+      return repostAd;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+
   async getAllAd(query: GetAllAdQueryDto) {
     try {
       const { page, limit } = query;

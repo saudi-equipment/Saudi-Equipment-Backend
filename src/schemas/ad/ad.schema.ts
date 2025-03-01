@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, now, Types } from 'mongoose';
 import { User } from '../user/user.schema';
 @Schema({ timestamps: true })
 export class Ad extends Document {
@@ -71,6 +71,12 @@ export class Ad extends Document {
   
   @Prop({ required: true })
   youTubeLink: string;
+
+  @Prop({required: false, default: false})
+  isSold: boolean
+
+  @Prop({ required: false})
+  soldDate: Date;
 
   @Prop({ required: true, default: 0 })
   views: number;
