@@ -26,13 +26,12 @@ export class NewsletterController {
   @Public()
   @Post('contact-us')
   async createContactUs(
-    @Req() req: Request,
     @Res() response,
-    @GetUser() user: User,
     @Body() payload: ContactUsDto,
   ) {
     try {
-      const data = await this.newsLetterService.createContactUs(user, payload);
+      console.log("Payload------------------>", payload)
+      const data = await this.newsLetterService.createContactUs(payload);
       return response
         .status(HttpStatus.CREATED)
         .json({ message: 'contact us created successfully', data });

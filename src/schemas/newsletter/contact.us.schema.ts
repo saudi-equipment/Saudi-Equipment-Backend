@@ -14,7 +14,7 @@ export class CantactUs extends Document {
   @Prop({ required: true})
   email: string;
 
-  @Prop({ required: true})
+  @Prop({ required: false})
   createdBy: string;
 
   @Prop({ required: true})

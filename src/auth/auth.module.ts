@@ -18,7 +18,7 @@ import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
     forwardRef(() => UserModule),
     forwardRef(() => NotificationModule),
     forwardRef(() => DigitalOceanModule),
-    ConfigModule.forRoot({ isGlobal: true }), 
+    ConfigModule.forRoot({ isGlobal: true }),
     PassportModule,
     MongooseModule.forFeature([{ name: 'Otp', schema: otpSchema }]),
     JwtModule.registerAsync({
@@ -26,14 +26,16 @@ import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
         const secretKey = configService.get<string>('SECRET_KEY');
-        
+
         if (!secretKey) {
           throw new Error('SECRET_KEY is not defined in environment variables');
         }
 
         return {
           secret: secretKey,
-          signOptions: { expiresIn: '2d' },
+          // signOptions: { expiresIn: '2d' },
+          // signOptions: { expiresIn: '60s' }  // 1 minute
+          signOptions: { expiresIn: '300s' }, // 5 minutes
         };
       },
     }),
