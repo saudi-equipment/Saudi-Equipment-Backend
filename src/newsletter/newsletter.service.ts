@@ -10,11 +10,10 @@ export class NewsletterService {
     ){}
 
     async createContactUs(
-        user: User,
         payload: ContactUsDto
     ) {
         try {
-            const data = await this.newsLetterStore.createContactUs(user, payload);
+            const data = await this.newsLetterStore.createContactUs(payload);
             return data;
         } catch (error) {  
             throw error;

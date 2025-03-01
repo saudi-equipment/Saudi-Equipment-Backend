@@ -16,7 +16,7 @@ export class UserStore {
   }
 
   async findAdminByEmail(email: string): Promise<IUser | null> {
-    return this.userModel.findOne({ email, role: UserRole.ADMIN}).exec();
+    return this.userModel.findOne({ email, role: UserRole.ADMIN }).exec();
   }
 
   async findExistingUserByPhoneNumber(
@@ -75,12 +75,13 @@ export class UserStore {
   }
 
   async activateOrDeactivateAccount(user: User): Promise<IUser | null> {
-    const updatedUser = await this.userModel.findOneAndUpdate(
-      { _id: user.id },
-      { $set: { isActive: !user.isActive } },
-      { new: true },
-    );
-
+    const updatedUser = await this.userModel
+      .findOneAndUpdate(
+        { _id: user.id },
+        { $set: { isActive: !user.isActive } },
+        { new: true },
+      )
+      .select('-password');
     return updatedUser;
   }
 
@@ -109,14 +110,16 @@ export class UserStore {
     updatedProfilePic?: string,
   ): Promise<IUser | null> {
     try {
-      const updatedUser = await this.userModel.findOneAndUpdate(
-        { _id: userId },
-        { $set: { ...payload, profilePicture: updatedProfilePic } },
-        { new: true },
-      );
+      const updatedUser = await this.userModel
+        .findOneAndUpdate(
+          { _id: userId },
+          { $set: { ...payload, profilePicture: updatedProfilePic } },
+          { new: true },
+        )
+        .select('-password');
       return updatedUser;
     } catch (error) {
-      throw new Error(`Failed to update user error: ${error.message}`);
+      throw error;
     }
   }
 
@@ -224,8 +227,8 @@ export class UserStore {
               },
             },
             {
-            $sort: {createdAt: -1}
-            }
+              $sort: { createdAt: -1 },
+            },
           ],
           as: 'ads',
         },
@@ -247,15 +250,15 @@ export class UserStore {
         {
           _id: user.id,
         },
-        { 
-          $set: { 
-            ads: [], 
-            subscriptions: [], 
-            email: `${date}${user.email}`, 
-            phoneNumber: `${date}${user.phoneNumber}`, 
-            isDeleted: true 
-          }
-        }
+        {
+          $set: {
+            ads: [],
+            subscriptions: [],
+            email: `${date}${user.email}`,
+            phoneNumber: `${date}${user.phoneNumber}`,
+            isDeleted: true,
+          },
+        },
       );
     } catch (error) {
       throw new error();

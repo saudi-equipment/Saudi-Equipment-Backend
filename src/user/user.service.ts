@@ -1,7 +1,4 @@
-import { query } from 'express';
-import { Subscription } from './../schemas/subscription/subscription.schema';
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenException,
   HttpStatus,
@@ -14,7 +11,7 @@ import { IUser } from 'src/interfaces/user/user.interface';
 import { AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
 import { User } from 'src/schemas/user/user.schema';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
-import { getPagination } from 'src/utils';
+import { getPagination, validateProfilePicSize } from 'src/utils';
 import { AdStore } from 'src/data-stores/ad/ad.store';
 
 @Injectable()
@@ -76,14 +73,13 @@ export class UserService {
 
   async findUserById(id: string): Promise<IUser | null> {
     const user = await this.userStore.findById(id);
-  
+
     if (!user || user.isDeleted) {
-      throw new NotFoundException("User is not found");
+      throw new NotFoundException('User is not found');
     }
-  
+
     return user;
   }
-  
 
   async verifyUser(id: string) {
     this.findUserById(id);
@@ -102,63 +98,51 @@ export class UserService {
   ) {
     try {
       const existingUser = await this.userStore.findById(userId);
-
-      if (!existingUser) {
-        throw new NotFoundException('User not found');
-      }
-
-      if (!existingUser.isVerified) {
-        throw new ForbiddenException('User is not verified');
-      }
-
-      if (existingUser.isDeleted) {
-        throw new ForbiddenException('User is deleted');
-      }
+      if (!existingUser) throw new NotFoundException('User not found');
 
       let newProfilePicUrl = existingUser.profilePicture || null;
 
       if (profilePicture) {
+        validateProfilePicSize(profilePicture);
+
         if (existingUser.profilePicture) {
           await this.digitalOceanService.deleteFilesFromSpaces(
             existingUser.profilePicture,
           );
-          await this.userStore.updateUser(userId, payload, newProfilePicUrl);
         }
+
         newProfilePicUrl =
           await this.digitalOceanService.uploadFileToSpaces(profilePicture);
       }
 
-      if (!profilePicture && !payload.profilePicUrl) {
-        if (existingUser.profilePicture) {
-          await this.digitalOceanService.deleteFilesFromSpaces(
-            existingUser.profilePicture,
-          );
-        }
+      if (
+        !profilePicture &&
+        !payload.profilePicUrl &&
+        existingUser.profilePicture
+      ) {
+        await this.digitalOceanService.deleteFilesFromSpaces(
+          existingUser.profilePicture,
+        );
         newProfilePicUrl = null;
       }
 
-      if (!existingUser.profilePicture && newProfilePicUrl) {
-        payload.profilePicUrl = newProfilePicUrl;
-      }
+      if (newProfilePicUrl) payload.profilePicUrl = newProfilePicUrl;
 
       const updatedUser = await this.userStore.updateUser(
         userId,
         payload,
         newProfilePicUrl,
       );
-
-      updatedUser.password = undefined;
       return updatedUser;
     } catch (error) {
-      console.error('Error updating user:', error.message);
-      throw new BadRequestException('Failed to update user');
+      throw error;
     }
   }
 
   async deleteAccount(user: User) {
     try {
       await this.userStore.deleteUser(user);
-      await this.adStore.deleteUserAds(user)
+      await this.adStore.deleteUserAds(user);
       return {
         message: 'Account deleted successfylly',
       };
@@ -178,7 +162,6 @@ export class UserService {
       throw new NotFoundException('User is not found');
     }
 
-    user.password = undefined;
     return user;
   }
 

@@ -21,6 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: { id: string; email: string }): Promise<IUser> {
     const user = await this.userService.findUserById(payload.id);
     if (!user) {
+      console.log("Token expired-------------")
       throw new UnauthorizedException('Invalid credentials');
     }
     return user;

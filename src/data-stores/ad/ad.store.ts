@@ -214,9 +214,12 @@ export class AdStore {
       }
 
       if (search) {
-        filters.titleEn = { $regex: search, $options: 'i' };
+        filters.$or = [
+          { titleEn: { $regex: search, $options: 'i' } },
+          { titleAr: { $regex: search, $options: 'i' } }
+        ];
       }
-
+      
       if (city) {
         filters.city = { $regex: new RegExp(city, 'i') };
       }

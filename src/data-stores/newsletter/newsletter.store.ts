@@ -12,15 +12,11 @@ export class NewsLetterStore {
   ) {}
 
   async createContactUs(
-    user: User,
     payload: ContactUsDto,
   ): Promise<IContactUs> {
     const contactUs = new this.contactUsModel({
-      createdBy: user.id,
-      ...payload,
-      user: user._id,
+      ...payload
     });
-
     await contactUs.save();
     return contactUs;
   }

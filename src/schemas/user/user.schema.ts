@@ -24,7 +24,7 @@ export class User extends Document {
   @Prop({ required: true })
   city: string;
   
-  @Prop({ required: false })
+  @Prop({ required: false, default: null})
   profilePicture: string;
 
   @Prop({ required: false, enum: UserRole, default: UserRole.USER })
