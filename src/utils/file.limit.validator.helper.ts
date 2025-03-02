@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-const fileTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/TIFF '];
+const fileTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 
 export function validateAdImagesSize(files?: any) {
   for (const file of files) {
@@ -9,7 +9,7 @@ export function validateAdImagesSize(files?: any) {
 
     if (!fileTypes.includes(file.mimetype)) {
       throw new BadRequestException(
-        'Only JPG, JPEG, TIFF and PNG images are allowed',
+        'Only JPG, JPEG, WebP and PNG images are allowed',
       );
     }
   }
@@ -21,6 +21,6 @@ export function validateProfilePicSize(profilePicture: any) {
 
   if (!fileTypes.includes(profilePicture.mimetype))
     throw new BadRequestException(
-      'Only JPG, JPEG, TIFF and PNG image are allowed',
+      'Only JPG, JPEG, WebP and PNG image are allowed',
     );
 }
