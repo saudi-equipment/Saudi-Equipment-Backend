@@ -11,7 +11,7 @@ import { IUser } from 'src/interfaces/user/user.interface';
 import { AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
 import { User } from 'src/schemas/user/user.schema';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
-import { getPagination, validateProfilePicSize } from 'src/utils';
+import { getPagination } from 'src/utils';
 import { AdStore } from 'src/data-stores/ad/ad.store';
 
 @Injectable()
@@ -103,8 +103,7 @@ export class UserService {
       let newProfilePicUrl = existingUser.profilePicture || null;
 
       if (profilePicture) {
-        // validateProfilePicSize(profilePicture);
-
+      
         if (existingUser.profilePicture) {
           await this.digitalOceanService.deleteFilesFromSpaces(
             existingUser.profilePicture,
