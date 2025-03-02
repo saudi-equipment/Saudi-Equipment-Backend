@@ -15,7 +15,7 @@ import { AdStore } from 'src/data-stores/ad/ad.store';
 import { IAd, IReportAd } from 'src/interfaces/ads';
 import { getPagination } from 'src/utils/pagination.helper';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
-import { generateAdId, validateAdImagesSize } from 'src/utils';
+import { generateAdId } from 'src/utils';
 
 
 @Injectable()
@@ -31,7 +31,6 @@ export class AdService {
     files: Express.Multer.File[],
   ) {
     try {
-      // validateAdImagesSize(files);
       const adId = generateAdId();
       
       if (user.isPremiumUser === true) {
@@ -72,8 +71,7 @@ export class AdService {
   ): Promise<IAd> {
     try {
       const existingAd = await this.adStore.getAdById(id);
-      // validateAdImagesSize(files);
-  
+    
       if (!existingAd) {
         throw new NotFoundException('Ad not found');
       }
