@@ -34,11 +34,23 @@ export class UserStore {
     const newUser = new this.userModel({
       isEmailVerified: payload.emailStatus,
       isActive: payload.phoneNumberStatus,
+      isVerified: true,
       ...payload,
-    });
-
-    return await newUser.save();
+    })
+    await newUser.save();
+    return this.userModel.findById(newUser._id).select('-password');
   }
+
+
+  // async updateUserByAdmin(payload: UserUpdateDto, id: string):Promise<IUser | null>{
+  //  const updatedUser = await this.userModel.findOneAndUpdate(
+  //    {_id: new Types.ObjectId(id)},
+  //    {$set: {...payload}},
+  //    {new: true}
+  //  )
+  //  .select('-password');
+  //  return updatedUser
+  // }
 
   async makeUserPremium(userId: string) {
     try {
@@ -164,14 +176,9 @@ export class UserStore {
             { $limit: currentLimit },
             {
               $project: {
-                _id: 1,
-                name: 1,
-                city: 1,
-                profilePicture: 1,
-                isActive: 1,
-                isPremiumUser: 1,
-                createdAt: 1,
-                updatedAt: 1,
+                password: 0,
+                ads: 0,
+                subscriptions: 0
               },
             },
           ],
