@@ -103,7 +103,7 @@ export class UserService {
       let newProfilePicUrl = existingUser.profilePicture || null;
 
       if (profilePicture) {
-        validateProfilePicSize(profilePicture);
+        // validateProfilePicSize(profilePicture);
 
         if (existingUser.profilePicture) {
           await this.digitalOceanService.deleteFilesFromSpaces(

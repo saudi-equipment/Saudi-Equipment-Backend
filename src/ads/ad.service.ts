@@ -31,7 +31,7 @@ export class AdService {
     files: Express.Multer.File[],
   ) {
     try {
-      validateAdImagesSize(files);
+      // validateAdImagesSize(files);
       const adId = generateAdId();
       
       if (user.isPremiumUser === true) {
@@ -72,7 +72,7 @@ export class AdService {
   ): Promise<IAd> {
     try {
       const existingAd = await this.adStore.getAdById(id);
-      validateAdImagesSize(files);
+      // validateAdImagesSize(files);
   
       if (!existingAd) {
         throw new NotFoundException('Ad not found');
