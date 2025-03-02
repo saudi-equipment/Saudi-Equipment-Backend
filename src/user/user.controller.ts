@@ -123,6 +123,12 @@ export class UserController {
     return await this.userService.addUserByAdmin(payload);
   }
 
+  // @UseGuards(RolesGuard)
+  // @Roles(UserRole.ADMIN)
+  // @Get(':userId')
+  // async getUserById(@Param('id') id: string) {
+  //   return await this.userService.getUserById(id);
+  // }
 
   @Public()
   @Get(':id')
