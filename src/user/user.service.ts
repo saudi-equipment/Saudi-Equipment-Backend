@@ -11,7 +11,7 @@ import { IUser } from 'src/interfaces/user/user.interface';
 import { AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
 import { User } from 'src/schemas/user/user.schema';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
-import { getPagination } from 'src/utils';
+import { getPagination, hashPassword, validatePassword } from 'src/utils';
 import { AdStore } from 'src/data-stores/ad/ad.store';
 
 @Injectable()
@@ -236,10 +236,18 @@ export class UserService {
 
   async addUserByAdmin(payload: AddUser) {
     try {
-      return await this.userStore.addUserByAdmin(payload);
+      this.findExistingUser(payload.email);
+      validatePassword(payload.password, payload.confirmPassword);
+      const hashedPassword = await hashPassword(payload.password);
+      const userData = { ...payload, password: hashedPassword };    
+      return await this.userStore.addUserByAdmin(userData);
     } catch (error) {
       throw error;
     }
+  }
+
+  async updateUserByAdmin(payload: UserUpdateDto, id: string): Promise<IUser | null >{
+    return await this.userStore.updateUser( id, payload)
   }
 
   async getUserWithAd(id: string): Promise<IUser | null> {
