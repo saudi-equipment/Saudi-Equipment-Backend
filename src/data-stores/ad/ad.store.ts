@@ -177,6 +177,8 @@ export class AdStore {
     }
   }
 
+  async getAllAdsForAdmin(skip: number, limit: number, query: GetAllAdQueryDto){}
+  
   async getAllAd(skip: number, limit: number, query: GetAllAdQueryDto) {
     try {
       const {

@@ -180,6 +180,17 @@ export class AdService {
     }
   }
 
+  async getAllAdsForAdmin(query: GetAllAdQueryDto) {
+    try {
+      const { page, limit } = query;
+      const { skip, limit: currentLimit } = getPagination({ page, limit });
+      const result = await this.adStore.getAllAdsForAdmin(skip, currentLimit, query);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getMyAds(user: User): Promise<IAd[]> {
     try {
       const ad = await this.adStore.getMyAds(user);

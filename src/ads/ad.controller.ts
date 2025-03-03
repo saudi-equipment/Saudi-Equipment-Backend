@@ -60,7 +60,7 @@ export class AdController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(UserRole.USER)
+  @Roles(UserRole.USER, UserRole.ADMIN)
   @Post('create-ad')
   @UseInterceptors(FilesInterceptor('files', 10))
   async createAds(
@@ -134,6 +134,20 @@ export class AdController {
       return response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: HttpStatus.BAD_REQUEST,
         message: error.message || 'An error occurred while updating the ad',
+      });
+    }
+  }
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get()
+  async getAllAdsForAdmin(@Res() response, @Query() query: GetAllAdQueryDto) {
+    try {
+      const data = await this.adService.getAllAdsForAdmin(query);
+      return response.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: error.message || 'Ads Not found',
       });
     }
   }

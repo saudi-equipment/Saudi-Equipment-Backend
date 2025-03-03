@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class CreateAdDto {
   @ApiProperty({ description: 'Category of the ad' })
@@ -57,7 +58,9 @@ export class CreateAdDto {
   @IsUrl()
   youTubeLink?: string;
 
-  // @ApiProperty({ description: 'Image files for the ad' })
-  // @IsNotEmpty()
-  // files: Express.Multer.File[];
+  @ApiProperty({ description: 'Ad feature status', type: Boolean })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true')
+  isFeatured: boolean;
 }
