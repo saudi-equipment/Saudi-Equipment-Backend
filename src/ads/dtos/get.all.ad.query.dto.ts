@@ -20,6 +20,11 @@ export class GetAllAdQueryDto {
   @IsString()
   search?: string;
 
+  @ApiProperty({ description: ' Status of the ad' })
+  @IsOptional()
+  @IsString()
+  adStatus?: string;
+
   @ApiProperty({ description: ' Search the ads' })
   @IsOptional()
   @IsString()
@@ -43,7 +48,12 @@ export class GetAllAdQueryDto {
   @ApiProperty({ description: ' Flag for the home Screen' })
   @IsOptional()
   @IsString()
-  sortType?: SortingType;
+  sortType?: string;
+
+  @ApiProperty({ description: ' Flag for the home Screen' })
+  @IsOptional()
+  @IsString()
+  orderType?: string;
 
   @ApiProperty({ description: ' Filter by post date ' })
   @IsOptional()

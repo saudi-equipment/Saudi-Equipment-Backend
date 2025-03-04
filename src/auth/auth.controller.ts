@@ -111,7 +111,7 @@ export class AuthController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(UserRole.USER)
+  @Roles(UserRole.USER, UserRole.ADMIN)
   @Put('change-password')
   async changePassword(
     @Res() response,
