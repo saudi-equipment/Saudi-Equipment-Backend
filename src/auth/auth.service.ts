@@ -142,7 +142,7 @@ export class AuthService {
       const hashedPassword = await hashPassword(payload.newPassword);
       await this.userService.updatePassword(hashedPassword, user.phoneNumber);
 
-      return { message: 'Password uchanged successfully'};
+      return { message: 'Password changed successfully'};
     } catch (error) {
       throw new Error(error.message || 'Error resetting password');
     }

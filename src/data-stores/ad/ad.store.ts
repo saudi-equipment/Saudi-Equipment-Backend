@@ -28,6 +28,7 @@ export class AdStore {
     const newAd = new this.adModel({
       createdBy: user.id,
       adId: adId,
+      isPromoted: payload.isFeatured,
       ...payload,
       images: uploadedUrls,
       user: user._id,
@@ -61,7 +62,13 @@ export class AdStore {
     try {
       const updatedAd = await this.adModel.findByIdAndUpdate(
         { _id: new Types.ObjectId(id), createdBy: user._id },
-        { $set: { ...payload, images: uploadedUrls || null } },
+        {
+          $set: {
+            isPromoted: payload.isFeatued,
+            ...payload,
+            images: uploadedUrls || null,
+          },
+        },
         { new: true },
       );
 
@@ -77,18 +84,18 @@ export class AdStore {
       _id: new Types.ObjectId(id),
       createdBy: user.id,
     });
-  
+
     if (!existingAd) {
       throw new Error('Ad not found or unauthorized');
     }
-  
+
     existingAd.isSold = true;
     existingAd.soldDate = new Date();
-  
+
     await existingAd.save();
     return existingAd;
   }
-  
+
   async repostAd(user: User, id: string): Promise<IAd> {
     const existingAd = await this.adModel.findOne({
       _id: new Types.ObjectId(id),
@@ -177,8 +184,68 @@ export class AdStore {
     }
   }
 
-  async getAllAdsForAdmin(skip: number, limit: number, query: GetAllAdQueryDto){}
-  
+  async getAllAdsForAdmin(
+    skip: number,
+    limit: number,
+    query: GetAllAdQueryDto,
+  ) {
+
+    const { search, sortType, adStatus, orderType } = query;
+
+    const filters: any = { isActive: { $in: [true, false] } };
+
+    if (search) {
+      filters.$or = [
+        { titleEn: { $regex: search, $options: 'i' } },
+        { titleAr: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    if (adStatus !== undefined) {
+      filters.isActive = adStatus === 'true';
+    }
+
+    const sortOptions: Record<string, any> = {
+      Newest: { createdAt: -1 },
+      Oldest: { createdAt: 1 },
+    };
+
+    const orderOptions: Record<string, any> = {
+      'A-Z': { titleEn: 1 },
+      'Z-A': { titleEn: -1 },
+    };
+
+    let finalSort: any = {};
+
+    if (sortType && sortOptions[sortType]) {
+      finalSort = { ...finalSort, ...sortOptions[sortType] };
+    }
+
+    if (orderType && orderOptions[orderType]) {
+      finalSort = { ...finalSort, ...orderOptions[orderType] };
+    }
+
+    if (Object.keys(finalSort).length === 0) {
+      finalSort = { createdAt: -1 };
+    }
+
+    const result = await this.adModel.aggregate([
+      { $match: filters },
+
+      {
+        $facet: {
+          totalAds: [{ $count: 'count' }],
+          ads: [{ $sort: finalSort }, { $skip: skip }, { $limit: limit }],
+        },
+      },
+    ]);
+
+    const totalAds = result[0]?.totalAds?.[0]?.count || 0;
+    const ads = result[0]?.ads || [];
+
+    return { totalAds, ads };
+  }
+
   async getAllAd(skip: number, limit: number, query: GetAllAdQueryDto) {
     try {
       const {
@@ -192,14 +259,14 @@ export class AdStore {
         sortByDate,
         isHome,
         isPromoted,
-        userId
+        userId,
       } = query;
 
       // console.log('Query', query);
       const filters: any = { isActive: true };
 
       if (userId) {
-        filters.createdBy = { $ne: userId }; 
+        filters.createdBy = { $ne: userId };
       }
 
       if (category) {
@@ -235,10 +302,10 @@ export class AdStore {
       if (search) {
         filters.$or = [
           { titleEn: { $regex: search, $options: 'i' } },
-          { titleAr: { $regex: search, $options: 'i' } }
+          { titleAr: { $regex: search, $options: 'i' } },
         ];
       }
-      
+
       if (city) {
         filters.city = { $regex: new RegExp(city, 'i') };
       }
@@ -294,16 +361,16 @@ export class AdStore {
               $convert: {
                 input: '$price',
                 to: 'double',
-                onError: null, 
-                onNull: null, 
+                onError: null,
+                onNull: null,
               },
             },
           },
         },
         {
           $sort: {
-            isPromoted: -1, 
-            createdAt: -1, 
+            isPromoted: -1,
+            createdAt: -1,
             ...(sortByPrice === 'asc' ? { priceNumeric: 1 } : {}),
             ...(sortByPrice === 'desc' ? { priceNumeric: -1 } : {}),
             ...(sortByDate === 'newest' ? { createdAt: -1 } : {}),
@@ -463,12 +530,10 @@ export class AdStore {
         },
         { $set: { isPromoted: false } },
       );
-      
+
       return result;
     } catch (error) {
       throw error;
     }
   }
-
-  
 }

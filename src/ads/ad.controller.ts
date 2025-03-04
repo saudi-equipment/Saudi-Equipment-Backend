@@ -106,7 +106,7 @@ export class AdController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(UserRole.USER)
+  @Roles(UserRole.USER, UserRole.ADMIN)
   @Put(':id')
   @UseInterceptors(FilesInterceptor('files', 10))
   async updateAd(
@@ -137,6 +137,7 @@ export class AdController {
       });
     }
   }
+
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get()
@@ -203,7 +204,6 @@ export class AdController {
     }
   }
 
-  
   @Patch(':id/sell')
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
@@ -226,7 +226,7 @@ export class AdController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(UserRole.USER)
+  @Roles(UserRole.USER, UserRole.ADMIN)
   @Delete(':id')
   async deleteAd(
     @Res() response,

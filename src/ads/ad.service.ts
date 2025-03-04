@@ -31,6 +31,7 @@ export class AdService {
     files: Express.Multer.File[],
   ) {
     try {
+      
       const adId = generateAdId();
       
       if (user.isPremiumUser === true) {

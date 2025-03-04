@@ -61,6 +61,6 @@ export class CreateAdDto {
   @ApiProperty({ description: 'Ad feature status', type: Boolean })
   @IsOptional()
   @IsBoolean()
-  @Transform(({ value }) => value === 'true')
+  @Transform(({ value }) => value === 'true' || value === true)
   isFeatured: boolean;
 }
