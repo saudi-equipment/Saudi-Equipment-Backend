@@ -156,19 +156,34 @@ export class UserStore {
     inactiveUsers: number;
     premiumUsers: number;
   }> {
-    const { q } = query;
+    const { search, sortType, orderType } = query;
 
     const matchStage: any = {
       isDeleted: false,
       role: { $ne: 'ADMIN' },
     };
 
-    if (q) {
-      matchStage.name = { $regex: q, $options: 'i' };
+    if (search) {
+      matchStage.name = { $regex: search, $options: 'i' };
+    }
+
+    const sortStage: Record<string, any> = {};
+
+    if (sortType === 'Newest') {
+      sortStage.createdAt = -1;
+    } else if (sortType === 'Oldest') {
+      sortStage.createdAt = 1;
+    }
+
+    if (orderType === 'A-Z') {
+      sortStage.name = 1;
+    } else if (orderType === 'Z-A') {
+      sortStage.name = -1;
     }
 
     const aggregationPipeline = [
       { $match: matchStage },
+      { $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 } },
       {
         $facet: {
           userList: [
@@ -178,7 +193,7 @@ export class UserStore {
               $project: {
                 password: 0,
                 ads: 0,
-                subscriptions: 0
+                subscriptions: 0,
               },
             },
           ],
@@ -205,11 +220,11 @@ export class UserStore {
     const result = await this.userModel.aggregate(aggregationPipeline).exec();
 
     return {
-      users: result[0].users,
       totalUsers: result[0].totalUsers || 0,
       activeUsers: result[0].activeUsers || 0,
       inactiveUsers: result[0].inactiveUsers || 0,
       premiumUsers: result[0].premiumUsers || 0,
+      users: result[0].users,
     };
   }
 
