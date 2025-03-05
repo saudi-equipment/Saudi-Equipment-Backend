@@ -205,37 +205,27 @@ export class AdStore {
       filters.isActive = adStatus === 'true';
     }
 
-    const sortOptions: Record<string, any> = {
-      Newest: { createdAt: -1 },
-      Oldest: { createdAt: 1 },
-    };
+    const sortStage: Record<string, any> = {};
 
-    const orderOptions: Record<string, any> = {
-      'A-Z': { titleEn: 1 },
-      'Z-A': { titleEn: -1 },
-    };
-
-    let finalSort: any = {};
-
-    if (sortType && sortOptions[sortType]) {
-      finalSort = { ...finalSort, ...sortOptions[sortType] };
+    if (sortType === 'Newest') {
+      sortStage.createdAt = -1;
+    } else if (sortType === 'Oldest') {
+      sortStage.createdAt = 1;
     }
 
-    if (orderType && orderOptions[orderType]) {
-      finalSort = { ...finalSort, ...orderOptions[orderType] };
+    if (orderType === 'A-Z') {
+      sortStage.titleEn = 1;
+    } else if (orderType === 'Z-A') {
+      sortStage.titleEn = -1;
     }
-
-    if (Object.keys(finalSort).length === 0) {
-      finalSort = { createdAt: -1 };
-    }
-
+    
     const result = await this.adModel.aggregate([
       { $match: filters },
 
       {
         $facet: {
           totalAds: [{ $count: 'count' }],
-          ads: [{ $sort: finalSort }, { $skip: skip }, { $limit: limit }],
+          ads: [{ $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 } }, { $skip: skip }, { $limit: limit }],
         },
       },
     ]);

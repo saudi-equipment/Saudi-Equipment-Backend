@@ -3,14 +3,10 @@ import { IsOptional, IsInt, Min, IsString, IsNotEmpty} from 'class-validator';
 
 export class GetUserListQueryDto {
   @IsOptional()
-  @Type(() => Number) 
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   page?: number;
-
-  @IsString()
-  @IsOptional()
-  q: string
 
   @IsOptional()
   @Type(() => Number)
@@ -18,4 +14,15 @@ export class GetUserListQueryDto {
   @Min(1)
   limit?: number;
 
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsString()
+  sortType?: string;
+
+  @IsOptional()
+  @IsString()
+  orderType?: string;
 }
