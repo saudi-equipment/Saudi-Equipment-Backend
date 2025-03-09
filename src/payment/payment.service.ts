@@ -1,11 +1,9 @@
 import { AdStore } from 'src/data-stores/ad/ad.store';
 import { PaymentStore } from './../data-stores/payment/payment.data.store';
-import { ConflictException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { UserStore } from 'src/data-stores/user/user.store';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
-import { CreatePaymentDto } from './dtos/create.payment.dto';
-import { query } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
@@ -22,30 +20,40 @@ export class PaymentService {
       this.configService.get<string>('MOYASAR_SECRET_KEY');
   }
 
-  async createPayment(payload: CreatePaymentDto) {
-    const { amount, currency, description } = payload;
-    const response = await axios.post(
-      'https://api.moyasar.com/v1/payments',
-      {
-        amount: amount * 100,
-        currency,
-        description,
-        source: {
-          type: 'creditcard',
-          name: 'Test User',
-          number: '4111111111111111',
-          month: '12',
-          year: '2025',
-          cvc: '123',
-        },
-        // callback_url: 'https://your-backend.com/moyasar/callback',
-      },
-      {
-        auth: { username: this.moyasarSecretKey, password: '' },
-      },
-    );
+  private paymentSessions: { [key: string]: any } = {};
 
-    return response.data;
+  createPaymentSession(amount: number, description: string, callbackUrl: string, publishable_key: string ) {
+
+    if (!amount || isNaN(amount) || amount <= 0) {
+      throw new Error('Invalid amount');
+    }
+
+    const sessionId = uuidv4();
+
+    const paymentData: any = {
+      sessionId,
+      amount: amount,
+      description,
+      callbackUrl,
+      publishable_key
+    };
+
+    this.paymentSessions[sessionId] = paymentData;
+    return {
+      sessionId,
+    };
+  }
+
+  getPaymentDetails(sessionId: string) {
+    const paymentData = this.paymentSessions[sessionId];
+
+    if (!paymentData) {
+      throw new NotFoundException('Invalid or expired session');
+    }
+
+    delete this.paymentSessions[sessionId];
+
+    return paymentData;
   }
 
   async createSubscription(payload: any) {
