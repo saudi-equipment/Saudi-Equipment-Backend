@@ -7,9 +7,13 @@ export class CreatePaymentDto {
 
   @IsString()
   @IsNotEmpty()
-  currency: string;
+  title: string;
 
   @IsString()
   @IsNotEmpty()
   description: string;
+  
+  @IsString()
+  @IsNotEmpty()
+  publishable : string;
 }
