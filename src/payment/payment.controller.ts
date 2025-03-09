@@ -8,6 +8,7 @@ import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
 import { CheckUserAccountGuard } from 'src/middleware/check.user.account.middleware';
 import { ApiQuery } from '@nestjs/swagger';
+import { Public } from 'src/decorators/public.routes.decorator';
 @UseGuards(RolesGuard)
 @Roles(UserRole.USER)
 @Controller('payment')
@@ -49,6 +50,7 @@ export class PaymentController {
     }
   }
 
+  @Public()
   @Get(':sessionId')
   getPaymentDetails(@Param('sessionId') sessionId: string) {
     if (!sessionId) {
