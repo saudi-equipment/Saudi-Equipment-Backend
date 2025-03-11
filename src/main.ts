@@ -43,7 +43,7 @@ async function bootstrap() {
 
   
   await app.listen(port, () => {
-    Logger.log(`Application is running on port ${port}api`);
+    Logger.log(`Application is running on port ${port}`);
   });
 }
 bootstrap();
