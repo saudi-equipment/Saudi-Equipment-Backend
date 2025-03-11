@@ -19,12 +19,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .build();
   app.use(morgan('dev'));
-  const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('/api', app, document, {
-    swaggerOptions: { 
-      url: '/api-json' 
-    },
-  });
+
   const configService = app.get(ConfigService);
   const reflector = app.get(Reflector);
   const userService = app.get(UserService); 
