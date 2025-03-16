@@ -45,25 +45,25 @@ export class Ad extends Document {
   @Prop({ required: false})
   duration: string;
 
-  @Prop({ required: false})
+  @Prop({ required: false, default: null})
   paymentType: string;
 
-  @Prop({ required: false})
+  @Prop({ required: false, default: null})
   paymentCompany: string;
 
-  @Prop({ required: false})
+  @Prop({ required: false, default: null})
   transactionId: string;
 
   @Prop({ required: true, default: false})
   isPromoted: boolean;
 
-  @Prop({ required: false, enum: ['7days', '15days', '30days'] })
+  @Prop({ required: false, enum: ['7days', '15days', '30days'], default: null })
   promotionPlan: string;
   
-  @Prop({ type: Date, required: false })
+  @Prop({ type: Date, required: false, default: null })
   promotionStartDate: Date;
   
-  @Prop({ type: Date, required: false })
+  @Prop({ type: Date, required: false, default: null })
   promotionEndDate: Date;
   
   @Prop({ required: true, default: false})

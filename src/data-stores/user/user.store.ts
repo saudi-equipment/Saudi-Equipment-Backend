@@ -160,7 +160,7 @@ export class UserStore {
 
     const matchStage: any = {
       isDeleted: false,
-      role: { $ne: 'ADMIN' },
+      role: { $ne:  UserRole.ADMIN  },
     };
 
     if (search) {
@@ -209,7 +209,7 @@ export class UserStore {
       {
         $project: {
           users: '$userList',
-          totalUsers: { $arrayElemAt: ['$totalUsers.count', 0] },
+          totalUsers: { $arrayElemAt: ['$total  Users.count', 0] },
           activeUsers: { $arrayElemAt: ['$activeUsers.count', 0] },
           inactiveUsers: { $arrayElemAt: ['$inactiveUsers.count', 0] },
           premiumUsers: { $arrayElemAt: ['$premiumUsers.count', 0] },

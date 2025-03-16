@@ -1,13 +1,12 @@
-import { IsString, IsNotEmpty, IsNumber, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateSubscriptionDto {
-
+export class UpdateSubscriptionDto {
   @ApiProperty({ required: false })
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   subscriptionName?: string;
-  
+
   @ApiProperty({ required: false })
   @IsNotEmpty()
   @IsString()
@@ -31,5 +30,5 @@ export class CreateSubscriptionDto {
   @ApiProperty()
   @IsOptional()
   @IsString()
-  subscriptionStatus: string
+  subscriptionStatus: string;
 }

@@ -1,14 +1,13 @@
 import { User } from '../../schemas/user/user.schema';
 
 export interface ISubscription {
-  transactionId: string;
+  _id: string;
+  transactionId?: string;
   subscriptionName?: string;
   subscribedBy?: string;
-  plan?: string;
+  plan: string;
   duration?: string;
-  status: 'active' | 'inactive';
+  status?: 'active' | 'inactive';
   price: number;
   user?: User;
-  created_at: Date;
-  updated_at: Date
 }
