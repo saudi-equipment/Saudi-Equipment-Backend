@@ -23,16 +23,16 @@ export class AdPackage extends Document {
   createdBy: string;
 
   @Prop({ required: false })
-  updatedBy: string;
+  updatedBy?: string;
 
   @Prop({ required: true })
   duration: string;
 
   @Prop({ required: false })
-  discount: number;
+  discount?: number;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: false })
-  user: User;
+  user?: User;
   
 }
 

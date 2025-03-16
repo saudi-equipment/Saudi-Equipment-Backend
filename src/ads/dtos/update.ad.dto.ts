@@ -71,4 +71,10 @@ export class UpdateAdDto {
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   isFeatued: boolean;
+
+  @IsOptional()
+  promotionStartDate: Date
+  
+  @IsOptional()
+  promotionEndDate: Date
 }
