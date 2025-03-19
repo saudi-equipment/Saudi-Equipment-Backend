@@ -17,7 +17,6 @@ import { getPagination } from 'src/utils/pagination.helper';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
 import { generateAdId } from 'src/utils';
 
-
 @Injectable()
 export class AdService {
   constructor(
@@ -31,9 +30,8 @@ export class AdService {
     files: Express.Multer.File[],
   ) {
     try {
-      
       const adId = generateAdId();
-      
+
       if (user.isPremiumUser === true) {
         const uploadedUrls = await Promise.all(
           files.map((file) =>
@@ -41,7 +39,12 @@ export class AdService {
           ),
         );
 
-        const data = await this.adStore.createAds(user, payload, adId, uploadedUrls);
+        const data = await this.adStore.createAds(
+          user,
+          payload,
+          adId,
+          uploadedUrls,
+        );
         return data;
       } else {
         const uploadedUrls = await Promise.all(
@@ -56,7 +59,12 @@ export class AdService {
           throw new Error(' free users can only create up to 3 ads.');
         }
 
-        const data = await this.adStore.createAds(user, payload, adId, uploadedUrls);
+        const data = await this.adStore.createAds(
+          user,
+          payload,
+          adId,
+          uploadedUrls,
+        );
         return data;
       }
     } catch (error) {
@@ -72,44 +80,56 @@ export class AdService {
   ): Promise<IAd> {
     try {
       const existingAd = await this.adStore.getAdById(id);
-    
+
       if (!existingAd) {
         throw new NotFoundException('Ad not found');
       }
-  
+
       let existingImages = existingAd.images || [];
       const remainingImages = payload.imageUrls || [];
-     
+
       if (remainingImages.length === 0) {
         if (existingImages.length > 0) {
           await this.digitalOceanService.deleteFilesFromSpaces(existingImages);
         }
-        
+
         await this.adStore.updateAd(id, user, payload, []);
       } else {
-        const imagesToDelete = existingImages.filter((image) => !remainingImages.includes(image));
+        const imagesToDelete = existingImages.filter(
+          (image) => !remainingImages.includes(image),
+        );
         if (imagesToDelete.length > 0) {
           await this.digitalOceanService.deleteFilesFromSpaces(imagesToDelete);
         }
       }
 
-      const newUploadedUrls = files && files.length > 0 
-        ? await Promise.all(files.map((file) => this.digitalOceanService.uploadFileToSpaces(file)))
-        : [];
+      const newUploadedUrls =
+        files && files.length > 0
+          ? await Promise.all(
+              files.map((file) =>
+                this.digitalOceanService.uploadFileToSpaces(file),
+              ),
+            )
+          : [];
 
       const updatedImages = [...remainingImages, ...newUploadedUrls];
-      const updatedAd = await this.adStore.updateAd(id, user, payload, updatedImages);
-  
+      const updatedAd = await this.adStore.updateAd(
+        id,
+        user,
+        payload,
+        updatedImages,
+      );
+
       return updatedAd;
     } catch (error) {
       console.error('Error in updateAd:', error.message);
       throw new Error(`Failed to update ad: ${error.message}`);
     }
   }
-  
-  async deleteAd(id: string, user: User) {
+
+  async deleteAd(id: string) {
     try {
-      return await this.adStore.deleteAd(id, user);
+      return await this.adStore.deleteAd(id);
     } catch (error) {
       error;
     }
@@ -169,7 +189,6 @@ export class AdService {
     }
   }
 
-
   async getAllAd(query: GetAllAdQueryDto) {
     try {
       const { page, limit } = query;
@@ -185,7 +204,11 @@ export class AdService {
     try {
       const { page, limit } = query;
       const { skip, limit: currentLimit } = getPagination({ page, limit });
-      const result = await this.adStore.getAllAdsForAdmin(skip, currentLimit, query);
+      const result = await this.adStore.getAllAdsForAdmin(
+        skip,
+        currentLimit,
+        query,
+      );
       return result;
     } catch (error) {
       throw error;
@@ -201,9 +224,8 @@ export class AdService {
     }
   }
 
-  async expireUserAds(userId: string){
+  async expireUserAds(userId: string) {
     const result = await this.adStore.expireUserAds(userId);
     return result;
   }
-
 }

@@ -27,7 +27,10 @@ export class PackagesController {
   }
 
   @Put(':id')
-  async updatePackage(@Param('id') id: string, payload: UpdateAdPackageDto) {
+  async updatePackage(
+    @Param('id') id: string,
+    @Body() payload: UpdateAdPackageDto,
+  ) {
     const packageData = await this.packageServerice.updatePackage(id, payload);
     if (!packageData) {
       throw new NotFoundException(`Package not found`);

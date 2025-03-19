@@ -454,7 +454,7 @@ export class AdStore {
       } else {
         return {
           totalAds,
-          ads: [...promotedAds, ...regularAds], // New: Promoted ads always at the top
+          ads: [...promotedAds, ...regularAds], 
         };
       }
     } catch (error) {
@@ -475,11 +475,10 @@ export class AdStore {
     }
   }
 
-  async deleteAd(id: string, user: User) {
+  async deleteAd(id: string) {
     try {
       return await this.adModel.findOneAndDelete({
         _id: id,
-        createdBy: user.id,
       });
     } catch (error) {
       throw error;

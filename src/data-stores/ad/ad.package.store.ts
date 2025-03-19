@@ -65,7 +65,7 @@ export class AdPackageStore {
 
   async updatePackage(id: string, payload: UpdateAdPackageDto) {
     return await this.adPackgeModel.findByIdAndUpdate(
-      { _id: new Types.ObjectId(id) },
+      {_id: new Types.ObjectId(id)},
       { $set: payload },
       { new: true },
     );
@@ -77,7 +77,7 @@ export class AdPackageStore {
       createdBy: user.id,
     });
 
-    return adPackage.save();
+    return adPackage.save(); 
   }
 
   async getPackageById(id: string) {
