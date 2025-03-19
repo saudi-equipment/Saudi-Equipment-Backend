@@ -39,54 +39,53 @@ export class Ad extends Document {
   @Prop({ required: true })
   city: string;
 
-  @Prop({ required: true, default: true})
+  @Prop({ required: true, default: true })
   isActive: boolean;
 
-  @Prop({ required: false})
+  @Prop({ required: false })
   duration: string;
 
-  @Prop({ required: false, default: null})
+  @Prop({ required: false })
   paymentType: string;
 
-  @Prop({ required: false, default: null})
+  @Prop({ required: false })
   paymentCompany: string;
 
-  @Prop({ required: false, default: null})
+  @Prop({ required: false })
   transactionId: string;
 
-  @Prop({ required: true, default: false})
+  @Prop({ required: true, default: false })
   isPromoted: boolean;
 
   @Prop({ required: false, enum: ['7days', '15days', '30days'], default: null })
   promotionPlan: string;
-  
-  @Prop({ type: Date, required: false, default: null })
+
+  @Prop({ type: Date, required: false })
   promotionStartDate: Date;
-  
-  @Prop({ type: Date, required: false, default: null })
+
+  @Prop({ type: Date, required: false })
   promotionEndDate: Date;
-  
-  @Prop({ required: true, default: false})
+
+  @Prop({ required: true, default: false })
   isRenew: boolean;
-  
+
   @Prop({ required: true })
   youTubeLink: string;
 
-  @Prop({required: false, default: false})
-  isSold: boolean
+  @Prop({ required: false, default: false })
+  isSold: boolean;
 
-  @Prop({ required: false})
+  @Prop({ required: false })
   soldDate: Date;
 
   @Prop({ required: true, default: 0 })
   views: number;
 
-  @Prop({ type: [String], required: true})
+  @Prop({ type: [String], required: true })
   images: string[];
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: false })
   user: User;
-  
 }
 
 export const adsSchema = SchemaFactory.createForClass(Ad);

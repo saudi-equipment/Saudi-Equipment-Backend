@@ -36,11 +36,10 @@ export class UserStore {
       isActive: payload.phoneNumberStatus,
       isVerified: true,
       ...payload,
-    })
+    });
     await newUser.save();
     return this.userModel.findById(newUser._id).select('-password');
   }
-
 
   // async updateUserByAdmin(payload: UserUpdateDto, id: string):Promise<IUser | null>{
   //  const updatedUser = await this.userModel.findOneAndUpdate(
@@ -160,7 +159,7 @@ export class UserStore {
 
     const matchStage: any = {
       isDeleted: false,
-      role: { $ne:  UserRole.ADMIN  },
+      role: { $ne: UserRole.ADMIN },
     };
 
     if (search) {
@@ -209,7 +208,7 @@ export class UserStore {
       {
         $project: {
           users: '$userList',
-          totalUsers: { $arrayElemAt: ['$total  Users.count', 0] },
+          totalUsers: { $arrayElemAt: ['$totalUsers.count', 0] },
           activeUsers: { $arrayElemAt: ['$activeUsers.count', 0] },
           inactiveUsers: { $arrayElemAt: ['$inactiveUsers.count', 0] },
           premiumUsers: { $arrayElemAt: ['$premiumUsers.count', 0] },
