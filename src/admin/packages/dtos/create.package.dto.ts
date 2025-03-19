@@ -2,15 +2,24 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNumber, IsOptional, IsMongoId } from 'class-validator';
 
 export class CreateAdPackageDto {
-  @ApiProperty({ description: 'Package name in Arabic', example: 'الباقة الذهبية' })
+  @ApiProperty({
+    description: 'Package name in Arabic',
+    example: 'الباقة الذهبية',
+  })
   @IsString()
   packageNameAr: string;
 
-  @ApiProperty({ description: 'Package name in English', example: 'Gold Package' })
+  @ApiProperty({
+    description: 'Package name in English',
+    example: 'Gold Package',
+  })
   @IsString()
   packageNameEn: string;
 
-  @ApiProperty({ description: 'Description of the package', example: 'Premium advertisement package' })
+  @ApiProperty({
+    description: 'Description of the package',
+    example: 'Premium advertisement package',
+  })
   @IsString()
   description: string;
 
@@ -30,5 +39,4 @@ export class CreateAdPackageDto {
   @IsOptional()
   @IsNumber()
   discount?: number;
-
 }

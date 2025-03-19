@@ -1,6 +1,20 @@
-import { Controller, Get, Post, Body, Param, NotFoundException, Delete, Put, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  NotFoundException,
+  Delete,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
-import { CreateAdPackageDto, CreateSubscriptionDto, GetSubscriptionListQueryDto, UpdateSubscriptionDto } from './dtos';
+import {
+  CreateSubscriptionDto,
+  GetSubscriptionListQueryDto,
+  UpdateSubscriptionDto,
+} from './dtos';
 import { GetUser } from 'src/decorators/user.decorator';
 import { User } from 'src/schemas/user/user.schema';
 import { Roles } from 'src/decorators/roles.decorator';
@@ -19,15 +33,6 @@ export class SubscriptionController {
     return this.subscriptionService.createSubscription(user, payload);
   }
 
-  @Roles(UserRole.ADMIN)
-  @Post('create-package')
-  async createPackage(
-    @GetUser() user: User,
-    @Body() payload: CreateAdPackageDto,
-  ) {
-    return this.subscriptionService.createAdPackage(user, payload);
-  }
-  
   @Get('list')
   async getAllSubscriptionsList(@Query() query: GetSubscriptionListQueryDto) {
     return this.subscriptionService.getAllSubscriptionsList(query);
@@ -69,23 +74,20 @@ export class SubscriptionController {
 
   @Roles(UserRole.ADMIN)
   @Put(':id')
-  async updateSubscription(@Param('id') id: string,  @Body()  payload: UpdateSubscriptionDto) {
-    const subscription = await this.subscriptionService.updateSubscription(id, payload);
+  async updateSubscription(
+    @Param('id') id: string,
+    @Body() payload: UpdateSubscriptionDto,
+  ) {
+    const subscription = await this.subscriptionService.updateSubscription(
+      id,
+      payload,
+    );
 
     if (!subscription) {
       throw new NotFoundException(`Subscription not found.`);
     }
 
-    return subscription
-  }
-
-  @Get('package/:id')
-  async getPackageById(@Param('id') id: string) {
-    const packageData = await this.subscriptionService.getPackageById(id);
-    if (!packageData) {
-      throw new NotFoundException(`Package with ID ${id} not found`);
-    }
-    return packageData;
+    return subscription;
   }
 
   @Get(':id')
@@ -96,6 +98,6 @@ export class SubscriptionController {
       throw new NotFoundException(`Subscription not found.`);
     }
 
-    return subscription
+    return subscription;
   }
 }

@@ -139,6 +139,9 @@ export class AdStore {
         },
         {
           $project: {
+            paymentType: 0,
+            paymentCompany: 0,
+            transactionId: 0,
             category: 1,
             fuelType: 1,
             createdBy: 1,
@@ -189,7 +192,6 @@ export class AdStore {
     limit: number,
     query: GetAllAdQueryDto,
   ) {
-
     const { search, sortType, adStatus, orderType } = query;
 
     const filters: any = { isActive: { $in: [true, false] } };
@@ -218,22 +220,42 @@ export class AdStore {
     } else if (orderType === 'Z-A') {
       sortStage.titleEn = -1;
     }
-    
-    const result = await this.adModel.aggregate([
-      { $match: filters },
 
+    const result = await this.adModel.aggregate([
       {
         $facet: {
           totalAds: [{ $count: 'count' }],
-          ads: [{ $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 } }, { $skip: skip }, { $limit: limit }],
+          activeAds: [{ $match: { isActive: true } }, { $count: 'count' }],
+          inactiveAds: [{ $match: { isActive: false } }, { $count: 'count' }],
+          promotedAds: [{ $match: { isPromoted: true } }, { $count: 'count' }],
+          ads: [
+            { $match: filters },
+            {
+              $sort: Object.keys(sortStage).length
+                ? sortStage
+                : { createdAt: -1 },
+            },
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $project: {
+                paymentType: 0,
+                paymentCompany: 0,
+                transactionId: 0,
+              },
+            },
+          ],
         },
       },
     ]);
 
-    const totalAds = result[0]?.totalAds?.[0]?.count || 0;
-    const ads = result[0]?.ads || [];
-
-    return { totalAds, ads };
+    return {
+      totalAds: result[0]?.totalAds?.[0]?.count || 0,
+      activeAds: result[0]?.activeAds?.[0]?.count || 0,
+      inactiveAds: result[0]?.inactiveAds?.[0]?.count || 0,
+      promotedAds: result[0]?.promotedAds?.[0]?.count || 0,
+      ads: result[0]?.ads || [],
+    };
   }
 
   async getAllAd(skip: number, limit: number, query: GetAllAdQueryDto) {
@@ -252,7 +274,6 @@ export class AdStore {
         userId,
       } = query;
 
-      // console.log('Query', query);
       const filters: any = { isActive: true };
 
       if (userId) {
@@ -301,7 +322,7 @@ export class AdStore {
       }
 
       if (isPromoted) {
-        filters.isPromoted = true;
+        filters.isPromoted = isPromoted;
       }
 
       if (postedDate) {
@@ -341,10 +362,21 @@ export class AdStore {
         }
       }
 
-      const pipeline: any[] = [
+      const promotedAdsPipeline: any[] = [
+        { $match: { isPromoted: true, isActive: true } },
+        { $sort: { createdAt: -1 } },
         {
-          $match: filters,
+          $project: {
+            paymentType: 0,
+            paymentCompany: 0,
+            transactionId: 0,
+          },
         },
+      ];
+
+      // Original pipeline with filters
+      const regularAdsPipeline: any[] = [
+        { $match: filters },
         {
           $addFields: {
             priceNumeric: {
@@ -359,7 +391,6 @@ export class AdStore {
         },
         {
           $sort: {
-            isPromoted: -1,
             createdAt: -1,
             ...(sortByPrice === 'asc' ? { priceNumeric: 1 } : {}),
             ...(sortByPrice === 'desc' ? { priceNumeric: -1 } : {}),
@@ -367,8 +398,15 @@ export class AdStore {
             ...(sortByDate === 'oldest' ? { createdAt: 1 } : {}),
           },
         },
+        { $skip: skip },
+        { $limit: limit },
         {
-          $project: { priceNumeric: 0 },
+          $project: {
+            priceNumeric: 0,
+            paymentType: 0,
+            paymentCompany: 0,
+            transactionId: 0,
+          },
         },
       ];
 
@@ -379,26 +417,33 @@ export class AdStore {
       const totalCountResult = await this.adModel.aggregate(totalCountPipeline);
       const totalAds = totalCountResult[0]?.totalAds || 0;
 
-      if (isHome) {
-        pipeline.push({
-          $facet: {
-            promotedAds: [{ $match: { isPromoted: true } }, { $limit: 4 }],
-            saleAds: [
-              { $match: { category: { $regex: /Sale/i } } },
-              { $limit: 4 },
-            ],
-            rentAds: [
-              { $match: { category: { $regex: /Rent/i } } },
-              { $limit: 4 },
-            ],
-            demandAds: [
-              { $match: { category: { $regex: /Demand/i } } },
-              { $limit: 4 },
-            ],
-          },
-        });
+      const [promotedAds, regularAds] = await Promise.all([
+        this.adModel.aggregate(promotedAdsPipeline),
+        this.adModel.aggregate(regularAdsPipeline),
+      ]);
 
-        const result = await this.adModel.aggregate(pipeline);
+      if (isHome) {
+        const homePipeline = [
+          {
+            $facet: {
+              promotedAds: [{ $match: { isPromoted: true } }, { $limit: 4 }],
+              saleAds: [
+                { $match: { category: { $regex: /Sale/i } } },
+                { $limit: 4 },
+              ],
+              rentAds: [
+                { $match: { category: { $regex: /Rent/i } } },
+                { $limit: 4 },
+              ],
+              demandAds: [
+                { $match: { category: { $regex: /Demand/i } } },
+                { $limit: 4 },
+              ],
+            },
+          },
+        ];
+
+        const result = await this.adModel.aggregate(homePipeline);
         return {
           totalAds,
           promotedAds: result[0]?.promotedAds || [],
@@ -407,20 +452,9 @@ export class AdStore {
           demandAds: result[0]?.demandAds || [],
         };
       } else {
-        pipeline.push(
-          { $skip: skip },
-          { $limit: limit },
-          {
-            $project: {
-              user: 0,
-            },
-          },
-        );
-
-        const result = await this.adModel.aggregate(pipeline);
         return {
           totalAds,
-          ads: result,
+          ads: [...promotedAds, ...regularAds], 
         };
       }
     } catch (error) {
@@ -441,11 +475,10 @@ export class AdStore {
     }
   }
 
-  async deleteAd(id: string, user: User) {
+  async deleteAd(id: string) {
     try {
       return await this.adModel.findOneAndDelete({
         _id: id,
-        createdBy: user.id,
       });
     } catch (error) {
       throw error;

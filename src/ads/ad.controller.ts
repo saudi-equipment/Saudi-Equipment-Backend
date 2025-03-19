@@ -1,4 +1,4 @@
-import { Request} from 'express';
+import { Request } from 'express';
 import {
   BadRequestException,
   Body,
@@ -228,12 +228,8 @@ export class AdController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Delete(':id')
-  async deleteAd(
-    @Res() response,
-    @Param('id') id: string,
-    @GetUser() user: User,
-  ) {
-    const result = await this.adService.deleteAd(id, user);
+  async deleteAd(@Res() response, @Param('id') id: string) {
+    const result = await this.adService.deleteAd(id);
     if (result) {
       return response.status(200).json({
         message: 'Ad successfully deleted',
