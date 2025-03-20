@@ -23,13 +23,13 @@ export class User extends Document {
 
   @Prop({ required: true })
   city: string;
-  
-  @Prop({ required: false, default: null})
+
+  @Prop({ required: false, default: null })
   profilePicture?: string;
 
   @Prop({ required: false, enum: UserRole, default: UserRole.USER })
   role: UserRole;
-  
+
   @Prop({ required: false, default: false })
   isVerified?: boolean;
 
@@ -50,7 +50,7 @@ export class User extends Document {
 
   @Prop({ required: false })
   metaLink?: string;
-  
+
   @Prop({ required: false })
   xLink?: string;
 
@@ -69,8 +69,8 @@ export class User extends Document {
   @Prop({ type: [Types.ObjectId], ref: 'Ad', required: false })
   ads?: Ad[];
 
-  @Prop({ type: [Types.ObjectId], ref: 'Subscription', required: false })
-  subscriptions?: Subscription[];
+  @Prop({ type: Types.ObjectId, ref: 'Subscription', required: false })
+  subscription?: Subscription;
 }
 
 export const userSchema = SchemaFactory.createForClass(User);

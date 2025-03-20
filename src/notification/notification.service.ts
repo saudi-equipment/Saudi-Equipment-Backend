@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as nodemailer from 'nodemailer';
+import { ContactUsDto } from 'src/newsletter/dtos/contact.us.dto';
 
 @Injectable()
 export class NotificationService {
@@ -79,7 +80,44 @@ export class NotificationService {
       });
       return info;
     } catch (error) {
-      throw error
+      throw error;
+    }
+  }
+
+  async sendContactEmail(contactData: ContactUsDto) {
+    try {
+      // console.log(
+      //   'Received contact data:',
+      //   JSON.stringify(contactData, null, 2),
+      // );
+      const info = await this.transporter.sendMail({
+        from: contactData.email,
+        to: this.configService.get<string>('SMTP_USER'),
+        subject: contactData.subject,
+        html: `
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
+            <h2 style="color: #333; text-align: center;">New Contact Inquiry</h2>
+            <p style="font-size: 16px; color: #555;">
+              <strong>Full Name:</strong> ${contactData.fullName}<br>
+              <strong>Phone Number:</strong> ${contactData.phoneNumber}<br>
+              <strong>Email:</strong> ${contactData.email}<br>
+              <strong>City:</strong> ${contactData.city}<br>
+              <strong>Inquiry Type:</strong> ${contactData.inquiryType}<br>
+              <strong>Subject:</strong> ${contactData.subject}<br>
+              <strong>Message:</strong> ${contactData.message}<br>
+            </p>
+            <p style="font-size: 14px; color: #777; text-align: center;">
+              This inquiry was submitted through the contact form.
+            </p>
+          </div>
+        `,
+      });
+
+      // Log the email sending result
+      // console.log('Email sent successfully:', JSON.stringify(info, null, 2));
+      return info;
+    } catch (error) {
+      throw error;
     }
   }
 }

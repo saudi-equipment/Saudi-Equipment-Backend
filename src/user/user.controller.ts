@@ -69,12 +69,12 @@ export class UserController {
     try {
       await this.expireAdsMiddleware.use(req, response, () => {});
       const result = await this.userService.deleteAccount(user);
-      return response.status(200).json(result); 
+      return response.status(200).json(result);
     } catch (error) {
       return response.status(500).json({ message: error.message });
     }
   }
-  
+
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Get('profile')
@@ -126,8 +126,22 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Put(':id')
-  async updatUserByAdmin(@Body() payload: UserUpdateDto, @Param('id') id: string) {
+  async updatUserByAdmin(
+    @Body() payload: UserUpdateDto,
+    @Param('id') id: string,
+  ) {
     return await this.userService.updateUserByAdmin(payload, id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Delete(':id')
+  async deletUser(@Param('id') id: string) {
+    await this.userService.deleteUser(id);
+    return {
+      statusCode: 200,
+      message: 'User deleted successfully',
+    };
   }
 
   @Public()
