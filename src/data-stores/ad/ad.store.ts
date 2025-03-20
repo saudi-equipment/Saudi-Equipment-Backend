@@ -1,7 +1,6 @@
 import { User } from '../../schemas/user/user.schema';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { PipelineStage } from 'mongoose';
 import { DeleteResult, Model, Types } from 'mongoose';
 import {
   CreateAdDto,
@@ -140,9 +139,6 @@ export class AdStore {
         },
         {
           $project: {
-            paymentType: 0,
-            paymentCompany: 0,
-            transactionId: 0,
             category: 1,
             fuelType: 1,
             createdBy: 1,
@@ -162,25 +158,19 @@ export class AdStore {
             youTubeLink: 1,
             views: 1,
             images: 1,
-            user: {
-              _id: 1,
-              name: 1,
-              email: 1,
-              phoneNumber: 1,
-              city: 1,
-              profilePicture: 1,
-              createdAt: 1,
-              updatedAt: 1,
-              isPremiumUser: 1,
-              isVerified: 1,
-            },
+            'user._id': 1,
+            'user.name': 1,
+            'user.email': 1,
+            'user.phoneNumber': 1,
+            'user.city': 1,
+            'user.profilePicture': 1,
+            'user.createdAt': 1,
+            'user.updatedAt': 1,
+            'user.isPremiumUser': 1,
+            'user.isVerified': 1,
           },
         },
       ]);
-
-      if (ad.length === 0) {
-        throw new Error('Ad not found');
-      }
 
       return ad[0];
     } catch (error) {
@@ -223,14 +213,12 @@ export class AdStore {
     }
 
     const result = await this.adModel.aggregate([
+      { $match: filters },
+
       {
         $facet: {
           totalAds: [{ $count: 'count' }],
-          activeAds: [{ $match: { isActive: true } }, { $count: 'count' }],
-          inactiveAds: [{ $match: { isActive: false } }, { $count: 'count' }],
-          promotedAds: [{ $match: { isPromoted: true } }, { $count: 'count' }],
           ads: [
-            { $match: filters },
             {
               $sort: Object.keys(sortStage).length
                 ? sortStage
@@ -238,25 +226,15 @@ export class AdStore {
             },
             { $skip: skip },
             { $limit: limit },
-            {
-              $project: {
-                paymentType: 0,
-                paymentCompany: 0,
-                transactionId: 0,
-              },
-            },
           ],
         },
       },
     ]);
 
-    return {
-      totalAds: result[0]?.totalAds?.[0]?.count || 0,
-      activeAds: result[0]?.activeAds?.[0]?.count || 0,
-      inactiveAds: result[0]?.inactiveAds?.[0]?.count || 0,
-      promotedAds: result[0]?.promotedAds?.[0]?.count || 0,
-      ads: result[0]?.ads || [],
-    };
+    const totalAds = result[0]?.totalAds?.[0]?.count || 0;
+    const ads = result[0]?.ads || [];
+
+    return { totalAds, ads };
   }
 
   async getAllAd(skip: number, limit: number, query: GetAllAdQueryDto) {
@@ -325,7 +303,7 @@ export class AdStore {
       if (isPromoted) {
         filters.isPromoted = true;
       }
-      
+
       if (postedDate) {
         const now = new Date();
         let startDate: Date | null = null;
@@ -423,67 +401,41 @@ export class AdStore {
         this.adModel.aggregate(regularAdsPipeline),
       ]);
 
-      
-         if (isHome) {
-           const homePipeline: PipelineStage[] = [
-             {
-               $facet: {
-                 promotedAds: [
-                   { $match: { isPromoted: true, isActive: true } },
-                   { $sort: { createdAt: -1 } },
-                   { $limit: 4 },
-                 ],
-                 saleAds: [
-                   {
-                     $match: { category: { $regex: /Sale/i }, isActive: true },
-                   },
-                   { $sort: { createdAt: -1 } },
-                   { $limit: 4 },
-                 ],
-                 rentAds: [
-                   {
-                     $match: { category: { $regex: /Rent/i }, isActive: true },
-                   },
-                   { $sort: { createdAt: -1 } },
-                   { $limit: 4 },
-                 ],
-                 demandAds: [
-                   {
-                     $match: {
-                       category: { $regex: /Demand/i },
-                       isActive: true,
-                     },
-                   },
-                   { $sort: { createdAt: -1 } },
-                   { $limit: 4 },
-                 ],
-               },
-             },
-             {
-               $project: {
-                 promotedAds: 1,
-                 saleAds: { $concatArrays: ['$promotedAds', '$saleAds'] },
-                 rentAds: { $concatArrays: ['$promotedAds', '$rentAds'] },
-                 demandAds: { $concatArrays: ['$promotedAds', '$demandAds'] },
-               },
-             },
-           ];
+      if (isHome) {
+        const homePipeline = [
+          {
+            $facet: {
+              promotedAds: [{ $match: { isPromoted: true } }, { $limit: 4 }],
+              saleAds: [
+                { $match: { category: { $regex: /Sale/i } } },
+                { $limit: 4 },
+              ],
+              rentAds: [
+                { $match: { category: { $regex: /Rent/i } } },
+                { $limit: 4 },
+              ],
+              demandAds: [
+                { $match: { category: { $regex: /Demand/i } } },
+                { $limit: 4 },
+              ],
+            },
+          },
+        ];
 
-           const result = await this.adModel.aggregate(homePipeline);
-
-           return {
-             totalAds,
-             promotedAds: result[0]?.promotedAds || [],
-             saleAds: result[0]?.saleAds || [],
-             rentAds: result[0]?.rentAds || [],
-             demandAds: result[0]?.demandAds || [],
-           };
-         } else {
-           return {
-             totalAds,
-             ads: [...promotedAds, ...regularAds],
-           };
-         }
+        const result = await this.adModel.aggregate(homePipeline);
+        return {
+          totalAds,
+          promotedAds: result[0]?.promotedAds || [],
+          saleAds: result[0]?.saleAds || [],
+          rentAds: result[0]?.rentAds || [],
+          demandAds: result[0]?.demandAds || [],
+        };
+      } else {
+        return {
+          totalAds,
+          ads: [...promotedAds, ...regularAds],
+        };
+      }
     } catch (error) {
       throw error;
     }
