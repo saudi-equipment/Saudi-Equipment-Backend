@@ -134,6 +134,10 @@ export class UserStore {
     }
   }
 
+  async deleteUserByAdmin(userId: string): Promise<void> {
+    return await this.userModel.findByIdAndDelete({ _id: new Types.ObjectId(userId) });
+  }
+
   async expireUserSubscription(userId: string) {
     try {
       const now = new Date();

@@ -103,7 +103,6 @@ export class UserService {
       let newProfilePicUrl = existingUser.profilePicture || null;
 
       if (profilePicture) {
-      
         if (existingUser.profilePicture) {
           await this.digitalOceanService.deleteFilesFromSpaces(
             existingUser.profilePicture,
@@ -239,15 +238,22 @@ export class UserService {
       this.findExistingUser(payload.email);
       validatePassword(payload.password, payload.confirmPassword);
       const hashedPassword = await hashPassword(payload.password);
-      const userData = { ...payload, password: hashedPassword };    
+      const userData = { ...payload, password: hashedPassword };
       return await this.userStore.addUserByAdmin(userData);
     } catch (error) {
       throw error;
     }
   }
 
-  async updateUserByAdmin(payload: UserUpdateDto, id: string): Promise<IUser | null >{
-    return await this.userStore.updateUser( id, payload)
+  async updateUserByAdmin(
+    payload: UserUpdateDto,
+    id: string,
+  ): Promise<IUser | null> {
+    return await this.userStore.updateUser(id, payload);
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    return await this.userStore.deleteUserByAdmin(id);
   }
 
   async getUserWithAd(id: string): Promise<IUser | null> {

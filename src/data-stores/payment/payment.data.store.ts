@@ -15,10 +15,10 @@ export class PaymentStore {
     @InjectModel('Ad') private adModel: Model<IAd>,
   ) {}
 
-  async existingSubscription(userId: string){
+  async existingSubscription(userId: string) {
     return await this.subscriptionModel.findOne({
-      user: new Types.ObjectId(userId)
-    })
+      user: new Types.ObjectId(userId),
+    });
   }
 
   async createSubscription(payload: any) {
@@ -66,6 +66,14 @@ export class PaymentStore {
       });
 
       await subscription.save();
+
+      await this.userModel.findByIdAndUpdate(
+        {_id: new Types.ObjectId(userId)},
+        {
+          $push: { subscription: subscription._id },
+        },
+        { new: true },
+      );
       return subscription;
     } catch (error) {
       throw error;
@@ -83,13 +91,13 @@ export class PaymentStore {
             from: 'users',
             localField: 'user',
             foreignField: '_id',
-            as: 'userDetails', 
+            as: 'userDetails',
           },
         },
         {
           $unwind: {
             path: '$userDetails',
-            preserveNullAndEmptyArrays: true, 
+            preserveNullAndEmptyArrays: true,
           },
         },
         {
@@ -106,21 +114,20 @@ export class PaymentStore {
             price: 1,
             startDate: 1,
             endDate: 1,
-            'userDetails.name': 1,  
-            'userDetails.email': 1, 
-            'userDetails.phoneNumber': 1, 
-            'userDetails.city': 1, 
-            'userDetails.isPremiumUser': 1, 
+            'userDetails.name': 1,
+            'userDetails.email': 1,
+            'userDetails.phoneNumber': 1,
+            'userDetails.city': 1,
+            'userDetails.isPremiumUser': 1,
           },
         },
       ]);
-  
-      return subscriptionDetails;  
+
+      return subscriptionDetails;
     } catch (error) {
       throw new Error(`Error fetching subscription: ${error.message}`);
     }
   }
-  
 
   async expireUserSubscription(userId: string): Promise<void> {
     try {
@@ -161,8 +168,8 @@ export class PaymentStore {
       const ad = await this.adModel.findById({ _id: adId, createdBy: userId });
       if (!ad) throw new Error('Ad not found');
 
-      if(ad.isPromoted){
-        throw new ConflictException('Ad already promoted')
+      if (ad.isPromoted) {
+        throw new ConflictException('Ad already promoted');
       }
 
       const currentDate = new Date();

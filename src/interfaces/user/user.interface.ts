@@ -1,11 +1,10 @@
-
 import { UserRole } from 'src/enums';
 import { Ad } from 'src/schemas/ad/ad.schema';
 import { Subscription } from 'src/schemas/subscription/subscription.schema';
 import { User } from 'src/schemas/user/user.schema';
 
 export interface IUser extends User {
-  id:string,
+  id: string;
   name: string;
   password: string;
   email: string;
@@ -23,8 +22,7 @@ export interface IUser extends User {
   whatsAppLink?: string;
   instaLink?: string;
   isPremiumUser?: boolean;
-  subscriptions?: Subscription[],
-  otpId?: string,
-  ads?: Ad[]
-  
+  subscriptions?: Subscription;
+  otpId?: string;
+  ads?: Ad[];
 }
