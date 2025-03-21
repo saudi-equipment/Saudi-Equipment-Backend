@@ -64,7 +64,8 @@ export class PaymentService {
       //   throw new ConflictException("Already subscribed this plan")
       // }
       
-      const subscription = await this.paymentStore.createSubscription(payload);
+      const subscription =
+        await this.paymentStore.createOrUpdateSubscription(payload);
       const user = await this.userStore.makeUserPremium(subscription.user.id);
       return {
         subscription,

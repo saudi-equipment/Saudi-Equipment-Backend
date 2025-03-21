@@ -21,7 +21,7 @@ export class PaymentStore {
     });
   }
 
-  async createSubscription(payload: any) {
+  async createOrUpdateSubscription(payload: any) {
     try {
       const {
         id: transactionId,
@@ -49,33 +49,65 @@ export class PaymentStore {
           throw new Error('Invalid subscription plan');
       }
 
-      const subscription = new this.subscriptionModel({
-        subscribedBy: userId,
-        transactionId,
+      // Check if the user already has a subscription
+      const existingSubscription = await this.subscriptionModel.findOne({
         user: new Types.ObjectId(userId),
-        plan,
-        price,
-        startDate,
-        endDate,
-        subscriptionStatus: 'active',
-        invoice_id,
-        duration: duration,
-        paymentType: paymentType,
-        paymentCompany: paymentCompany,
-        ...payload,
       });
 
-      await subscription.save();
+      let subscription;
 
-      await this.userModel.findByIdAndUpdate(userId, {
-        subscription: subscription._id,
-      });
+      if (existingSubscription) {
+        // Update the existing subscription
+        subscription = await this.subscriptionModel.findByIdAndUpdate(
+          existingSubscription._id,
+          {
+            transactionId,
+            plan,
+            price,
+            startDate,
+            endDate,
+            subscriptionStatus: 'active',
+            invoice_id,
+            duration,
+            paymentType,
+            paymentCompany,
+            ...payload,
+          },
+          { new: true }, // Return the updated document
+        );
+      } else {
+        // Create a new subscription
+        subscription = new this.subscriptionModel({
+          subscribedBy: userId,
+          transactionId,
+          user: new Types.ObjectId(userId),
+          plan,
+          price,
+          startDate,
+          endDate,
+          subscriptionStatus: 'active',
+          invoice_id,
+          duration,
+          paymentType,
+          paymentCompany,
+          ...payload,
+        });
+
+        await subscription.save();
+      }
+
+      // Update the user's subscription field
+      await this.userModel.findByIdAndUpdate(
+        userId,
+        { subscription: subscription._id },
+        { new: true },
+      );
+
       return subscription;
     } catch (error) {
       throw error;
     }
   }
-
   async getSubscription(userId: string) {
     try {
       const subscriptionDetails = await this.subscriptionModel.aggregate([
