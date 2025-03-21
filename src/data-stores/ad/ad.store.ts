@@ -1,7 +1,7 @@
 import { User } from '../../schemas/user/user.schema';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { DeleteResult, Model, Types } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import {
   CreateAdDto,
   GetAllAdQueryDto,
@@ -158,6 +158,8 @@ export class AdStore {
             youTubeLink: 1,
             views: 1,
             images: 1,
+            createdAt: 1,
+            updatedAt: 1,
             'user._id': 1,
             'user.name': 1,
             'user.email': 1,
@@ -253,7 +255,6 @@ export class AdStore {
         userId,
       } = query;
 
-      // console.log('Query', query);
       const filters: any = { isActive: true };
 
       if (userId) {

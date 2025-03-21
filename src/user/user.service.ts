@@ -151,15 +151,6 @@ export class UserService {
 
   async getUserById(userId: string): Promise<IUser | null> {
     const user = await this.userStore.findById(userId);
-
-    if (user.isVerified === false) {
-      throw new ForbiddenException('User is not verified');
-    }
-
-    if (user.isDeleted === true) {
-      throw new NotFoundException('User is not found');
-    }
-
     return user;
   }
 
@@ -177,7 +168,7 @@ export class UserService {
         await this.userStore.activateOrDeactivateAccount(user);
       updatedUser.password = undefined;
       updatedUser.ads = undefined;
-      updatedUser.subscriptions = undefined;
+      updatedUser.subscription = undefined;
       return updatedUser;
     } catch (error) {
       throw error;
@@ -236,7 +227,10 @@ export class UserService {
   async addUserByAdmin(payload: AddUser) {
     try {
       this.findExistingUser(payload.email);
+      this.findExistingUserByPhoneNumber(payload.phoneNumber)
+
       validatePassword(payload.password, payload.confirmPassword);
+      
       const hashedPassword = await hashPassword(payload.password);
       const userData = { ...payload, password: hashedPassword };
       return await this.userStore.addUserByAdmin(userData);

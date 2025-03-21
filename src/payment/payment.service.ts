@@ -1,10 +1,6 @@
 import { AdStore } from 'src/data-stores/ad/ad.store';
 import { PaymentStore } from './../data-stores/payment/payment.data.store';
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { UserStore } from 'src/data-stores/user/user.store';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
@@ -26,12 +22,8 @@ export class PaymentService {
 
   private paymentSessions: { [key: string]: any } = {};
 
-  createPaymentSession(
-    amount: number,
-    description: string,
-    callbackUrl: string,
-    publishable_key: string,
-  ) {
+  createPaymentSession(amount: number, description: string, callbackUrl: string, publishable_key: string ) {
+
     if (!amount || isNaN(amount) || amount <= 0) {
       throw new Error('Invalid amount');
     }
@@ -43,7 +35,7 @@ export class PaymentService {
       amount: amount,
       description,
       callbackUrl,
-      publishable_key,
+      publishable_key
     };
 
     this.paymentSessions[sessionId] = paymentData;
@@ -71,7 +63,7 @@ export class PaymentService {
       // if(existingSubscription){
       //   throw new ConflictException("Already subscribed this plan")
       // }
-
+      
       const subscription = await this.paymentStore.createSubscription(payload);
       const user = await this.userStore.makeUserPremium(subscription.user.id);
       return {
@@ -92,9 +84,10 @@ export class PaymentService {
     }
   }
 
-  async getSubscription(userId: string) {
-    return await this.paymentStore.getSubscription(userId);
+  async getSubscription(userId: string){
+    return await this.paymentStore.getSubscription(userId)
   }
+
 
   async expireUserSubscription(userId: string) {
     try {

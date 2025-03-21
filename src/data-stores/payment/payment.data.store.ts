@@ -67,13 +67,9 @@ export class PaymentStore {
 
       await subscription.save();
 
-      await this.userModel.findByIdAndUpdate(
-        {_id: new Types.ObjectId(userId)},
-        {
-          $push: { subscription: subscription._id },
-        },
-        { new: true },
-      );
+      await this.userModel.findByIdAndUpdate(userId, {
+        subscription: subscription._id,
+      });
       return subscription;
     } catch (error) {
       throw error;
