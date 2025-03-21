@@ -22,7 +22,7 @@ export interface IUser extends User {
   whatsAppLink?: string;
   instaLink?: string;
   isPremiumUser?: boolean;
-  subscriptions?: Subscription;
+  subscription?: Subscription;
   otpId?: string;
   ads?: Ad[];
 }

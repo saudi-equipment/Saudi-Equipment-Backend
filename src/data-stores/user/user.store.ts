@@ -81,8 +81,20 @@ export class UserStore {
     );
   }
 
+
   async findById(id: string): Promise<IUser | null> {
-    return await this.userModel.findById({ _id: id }).exec();
+    const user = await this.userModel
+      .findById(id) 
+      .select('-password')
+      .select('-ads')
+      .select('-__v') 
+      .populate({
+        path: 'subscription', 
+        select: '-__v',
+      })
+      .exec();
+
+    return user;
   }
 
   async activateOrDeactivateAccount(user: User): Promise<IUser | null> {
@@ -135,7 +147,9 @@ export class UserStore {
   }
 
   async deleteUserByAdmin(userId: string): Promise<void> {
-    return await this.userModel.findByIdAndDelete({ _id: new Types.ObjectId(userId) });
+    return await this.userModel.findByIdAndDelete({
+      _id: new Types.ObjectId(userId),
+    });
   }
 
   async expireUserSubscription(userId: string) {
