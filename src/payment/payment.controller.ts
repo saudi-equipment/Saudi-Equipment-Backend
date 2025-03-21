@@ -1,13 +1,9 @@
-import { Body, Controller, Get, NotFoundException, Param, Post, Put, Query, Req, Res, UseGuards } from '@nestjs/common';
-import { CreatePaymentDto } from './dtos/create.payment.dto';
+import { Body, Controller, Get, NotFoundException, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { GetUser } from 'src/decorators/user.decorator';
-import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
 import { RolesGuard } from 'src/auth/guard/roles.gurad';
 import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
-import { CheckUserAccountGuard } from 'src/middleware/check.user.account.middleware';
-import { ApiQuery } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public.routes.decorator';
 @UseGuards(RolesGuard)
 @Roles(UserRole.USER)
