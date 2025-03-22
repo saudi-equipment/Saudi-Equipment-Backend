@@ -12,12 +12,16 @@ import { otpSchema } from 'src/schemas/otp/otp.schema';
 import { NotificationModule } from 'src/notification/notification.module';
 import { OtpStore } from 'src/data-stores/otp/otp.store';
 import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
+import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
+import { AdModule } from 'src/ads/ad.module';
+import { PaymentModule } from 'src/payment/payment.module';
 
 @Module({
   imports: [
     forwardRef(() => UserModule),
     forwardRef(() => NotificationModule),
     forwardRef(() => DigitalOceanModule),
+    AdModule, PaymentModule,
     ConfigModule.forRoot({ isGlobal: true }),
     PassportModule,
     MongooseModule.forFeature([{ name: 'Otp', schema: otpSchema }]),
@@ -33,12 +37,19 @@ import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
 
         return {
           secret: secretKey,
-          signOptions: { expiresIn: '4d' }
+          signOptions: { expiresIn: '4d' },
         };
       },
     }),
   ],
-  providers: [AuthService, JwtStrategy, OtpService, OtpStore],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    OtpService,
+    OtpStore,
+    ExpireAdsMiddleware,
+    ExpireAdsMiddleware,
+  ],
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })

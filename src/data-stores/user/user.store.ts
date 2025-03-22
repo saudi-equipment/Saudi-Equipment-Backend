@@ -85,7 +85,6 @@ export class UserStore {
   async findById(id: string): Promise<IUser | null> {
     const user = await this.userModel
       .findById(id) 
-      .select('-password')
       .select('-ads')
       .select('-__v') 
       .populate({
@@ -143,6 +142,28 @@ export class UserStore {
       return updatedUser;
     } catch (error) {
       throw error;
+    }
+  }
+
+  async blockUser(userId: string): Promise<IUser | null>{
+    try {
+     const user = await this.userModel.findById(userId).select('-password');
+
+     if (!user) {
+       throw new Error('User not found');
+     }
+
+     const updatedUser = await this.userModel
+       .findOneAndUpdate(
+         { _id: new Types.ObjectId(userId) },
+         { $set: { isBlocked: !user.isBlocked } },
+         { new: true }, 
+       )
+       .select('-password');
+
+     return updatedUser;
+    } catch (error) {
+      throw error
     }
   }
 

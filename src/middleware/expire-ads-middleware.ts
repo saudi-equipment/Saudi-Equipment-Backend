@@ -10,6 +10,7 @@ export class ExpireAdsMiddleware implements NestMiddleware {
   constructor(
     private readonly adService: AdService,
     private readonly paymentService: PaymentService,
+    private readonly userService: UserService
   ) {}
 
   async use(req: Request, res: Response, next: NextFunction) {

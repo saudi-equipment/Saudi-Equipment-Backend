@@ -135,6 +135,23 @@ export class UserController {
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
+  @Patch('block/:userId')
+  async blockUser(
+    @Param('userId') userId: string,
+  ) {
+    const updatedUser = await this.userService.blockUser(userId);
+
+    const message = updatedUser.isBlocked
+      ? 'User has been blocked successfully'
+      : 'User has been unblocked successfully';
+      
+    return ({
+      message,
+    });
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
   @Delete(':id')
   async deletUser(@Param('id') id: string) {
     await this.userService.deleteUser(id);
