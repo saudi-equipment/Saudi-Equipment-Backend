@@ -151,7 +151,6 @@ export class AuthService {
   async resetPassword(payload: ResetPasswordDto) {
     try {
       const user = await this.userService.findUserById(payload.userId);
-
       const isPasswordMatch = bcrypt.compareSync(
         payload.newPassword,
         user.password,

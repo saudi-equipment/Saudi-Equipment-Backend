@@ -4,9 +4,9 @@ import { Subscription } from 'src/schemas/subscription/subscription.schema';
 import { User } from 'src/schemas/user/user.schema';
 
 export interface IUser extends User {
-  id: string;
-  name: string;
-  password: string;
+  id?: string;
+  name?: string;
+  password?: string;
   email: string;
   phoneNumber: string;
   city: string;

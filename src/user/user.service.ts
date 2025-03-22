@@ -179,7 +179,6 @@ export class UserService {
     if (user.isVerified === false) {
       return {
         statusCode: HttpStatus.FORBIDDEN,
-        status: 'not_verified',
         message: 'User is not verified',
       };
     }
@@ -187,22 +186,27 @@ export class UserService {
     if (user.isDeleted === true) {
       return {
         statusCode: HttpStatus.NOT_FOUND,
-        status: 'deleted',
         message: 'User is not found',
+      };
+    }
+
+    if (user.isBlocked === true) {
+      return {
+        statusCode: HttpStatus.FORBIDDEN,
+        message:
+          'Your account is blocked. Please contact saudi-equipment support team to activate your account',
       };
     }
 
     if (user.isActive === false) {
       return {
         statusCode: HttpStatus.FORBIDDEN,
-        status: 'deactivated',
         message: 'Your account is deactivated. Please activate the account.',
       };
     }
 
     return {
       statusCode: HttpStatus.OK,
-      status: 'active',
       message: 'User account is active.',
     };
   }
@@ -227,10 +231,10 @@ export class UserService {
   async addUserByAdmin(payload: AddUser) {
     try {
       this.findExistingUser(payload.email);
-      this.findExistingUserByPhoneNumber(payload.phoneNumber)
+      this.findExistingUserByPhoneNumber(payload.phoneNumber);
 
       validatePassword(payload.password, payload.confirmPassword);
-      
+
       const hashedPassword = await hashPassword(payload.password);
       const userData = { ...payload, password: hashedPassword };
       return await this.userStore.addUserByAdmin(userData);
@@ -246,8 +250,59 @@ export class UserService {
     return await this.userStore.updateUser(id, payload);
   }
 
+  async blockUser(userId: string): Promise<IUser | null> {
+    return await this.userStore.blockUser(userId);
+  }
+
   async deleteUser(id: string): Promise<void> {
     return await this.userStore.deleteUserByAdmin(id);
+  }
+
+  async checkUserBlockStatusByPhoneNumber(
+    phoneNumber?: string,
+  ): Promise<IUser | null> {
+    const user =
+      await this.userStore.findExistingUserByPhoneNumber(phoneNumber);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    if (user.isBlocked == true) {
+      throw new ForbiddenException(
+        'Your account is blocked. Please contact saudi-equipment support team to activate your account',
+      );
+    }
+    return user;
+  }
+
+  async checkUserBlockStatusByEmail(email: string): Promise<IUser | null> {
+    const user = await this.userStore.findExistingUser(email);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.isBlocked == true) {
+      throw new ForbiddenException(
+        'Your account is blocked. Please contact saudi-equipment support team to activate your account',
+      );
+    }
+    return user;
+  }
+
+  async checkUserBlockStatusByUserId(userId: string): Promise<IUser | null> {
+    const user = await this.userStore.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.isBlocked == true) {
+      throw new ForbiddenException(
+        'Your account is blocked. Please contact saudi-equipment support team to activate your account',
+      );
+    }
+    return user;
   }
 
   async getUserWithAd(id: string): Promise<IUser | null> {

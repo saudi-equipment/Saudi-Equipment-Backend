@@ -26,6 +26,7 @@ import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
 import { GetUser } from 'src/decorators/user.decorator';
 import { Public } from 'src/decorators/public.routes.decorator';
+import { UserService } from 'src/user/user.service';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -33,6 +34,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly otpService: OtpService,
+    private readonly userService: UserService,
   ) {}
 
   @Public()
@@ -54,6 +56,7 @@ export class AuthController {
   @Post('verify-otp')
   async verifyOtp(@Res() response, @Body() payload: VerifyOtpDto) {
     try {
+      await this.userService.checkUserBlockStatusByPhoneNumber(payload.email);
       const data = await this.otpService.verifyOtp(payload);
       return response.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -66,7 +69,7 @@ export class AuthController {
   @Post('send-verification-email')
   async sendVerificationEmail(@GetUser() user: User) {
     try {
-      return await this.otpService.sendVerificationEmail(user)
+      return await this.otpService.sendVerificationEmail(user);
     } catch (error) {
       throw error;
     }
@@ -76,6 +79,7 @@ export class AuthController {
   @Post('resend-otp')
   async resSendOtp(@Body() payload: ResendOtpDto) {
     try {
+      await this.userService.checkUserBlockStatusByEmail(payload.email);
       return await this.otpService.resendOpt(payload);
     } catch (error) {
       throw error;
@@ -86,6 +90,9 @@ export class AuthController {
   @Post('forgot-password')
   async forgotPassword(@Res() response, @Body() payload: ForgotPasswordDto) {
     try {
+      await this.userService.checkUserBlockStatusByPhoneNumber(
+        payload.phoneNumber,
+      );
       const phoneNumber = payload.phoneNumber;
       const data = await this.otpService.sendOtp(phoneNumber);
 
@@ -103,6 +110,7 @@ export class AuthController {
   @Put('reset-password')
   async resetPassword(@Res() response, @Body() payload: ResetPasswordDto) {
     try {
+      await this.userService.checkUserBlockStatusByUserId(payload.userId);
       const data = await this.authService.resetPassword(payload);
       return response.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -134,6 +142,9 @@ export class AuthController {
   @Post('login')
   async signIn(@Body() userLoginDto: LoginDto, @Res() response) {
     try {
+      await this.userService.checkUserBlockStatusByPhoneNumber(
+        userLoginDto.phoneNumber,
+      );
       const { token, otpId, message, user } =
         await this.authService.signIn(userLoginDto);
 
@@ -149,9 +160,8 @@ export class AuthController {
 
       return response.status(HttpStatus.OK).json({
         statusCode: HttpStatus.OK,
-        message: 'Login successful',
+        message: 'Login successfully',
         accessToken: token,
-        user
       });
     } catch (error) {
       throw error;
@@ -178,7 +188,7 @@ export class AuthController {
         statusCode: HttpStatus.OK,
         message: 'Login successfully',
         accessToken: token,
-        user
+        user,
       });
     } catch (error) {
       throw error;
