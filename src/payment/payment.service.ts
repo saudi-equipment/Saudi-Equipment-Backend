@@ -22,23 +22,15 @@ export class PaymentService {
 
   private paymentSessions: { [key: string]: any } = {};
 
-  createPaymentSession(amount: number, description: string, callbackUrl: string, publishable_key: string ) {
-
+  createPaymentSession(payload: any) {
+    const {amount} = payload
+    
     if (!amount || isNaN(amount) || amount <= 0) {
       throw new Error('Invalid amount');
     }
 
     const sessionId = uuidv4();
-
-    const paymentData: any = {
-      sessionId,
-      amount: amount,
-      description,
-      callbackUrl,
-      publishable_key
-    };
-
-    this.paymentSessions[sessionId] = paymentData;
+    this.paymentSessions[sessionId] = payload;
     return {
       sessionId,
     };

@@ -13,16 +13,10 @@ export class PaymentController {
   
   @Post()
   createPayment(
-    @Body() body: { amount: number; description: string; callbackUrl: string, publishable_key: string },
+    @Body() payload: any
   ) {
     try {
-      const { amount, description, callbackUrl, publishable_key } = body;
-      const result = this.paymentService.createPaymentSession(
-        amount,
-        description,
-        callbackUrl,
-        publishable_key
-      );
+      const result = this.paymentService.createPaymentSession(payload);
       return result
     } catch (error) {
       error
