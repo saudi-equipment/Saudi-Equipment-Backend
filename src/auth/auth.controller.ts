@@ -162,6 +162,7 @@ export class AuthController {
         statusCode: HttpStatus.OK,
         message: 'Login successfully',
         accessToken: token,
+        user
       });
     } catch (error) {
       throw error;
