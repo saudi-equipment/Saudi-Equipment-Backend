@@ -1,4 +1,5 @@
 import { UserRole } from 'src/enums';
+import {Types} from 'mongoose'
 import { Ad } from 'src/schemas/ad/ad.schema';
 import { Subscription } from 'src/schemas/subscription/subscription.schema';
 import { User } from 'src/schemas/user/user.schema';
@@ -24,5 +25,6 @@ export interface IUser extends User {
   isPremiumUser?: boolean;
   subscription?: Subscription;
   otpId?: string;
+  blockedUsers?: Types.ObjectId[];
   ads?: Ad[];
 }

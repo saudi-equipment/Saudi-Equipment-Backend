@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   HttpStatus,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -123,6 +124,32 @@ export class UserController {
     return await this.userService.addUserByAdmin(payload);
   }
 
+  @Post('block/:userId')
+  async toggleBlockUser(
+    @Param('userId') userId: string,
+    @Req() req: Request,
+    @GetUser() currentUser: User,
+  ) {
+    const userIdForBlock = userId;
+
+    const userToToggle = await this.userService.findUserById(userIdForBlock);
+    if (!userToToggle) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isBlocked = await this.userService.toggleBlockUser(
+      currentUser,
+      userIdForBlock,
+    );
+
+    return {
+      message: isBlocked
+        ? 'User blocked successfully'
+        : 'User unblocked successfully',
+      isBlocked,
+    };
+  }
+
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Put(':id')
@@ -133,22 +160,20 @@ export class UserController {
     return await this.userService.updateUserByAdmin(payload, id);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Patch('block/:userId')
-  async blockUser(
-    @Param('userId') userId: string,
-  ) {
-    const updatedUser = await this.userService.blockUser(userId);
+  // @UseGuards(RolesGuard)
+  // @Roles(UserRole.ADMIN)
+  // @Patch('block/:userId')
+  // async blockUser(@Param('userId') userId: string) {
+  //   const updatedUser = await this.userService.blockUser(userId);
 
-    const message = updatedUser.isBlocked
-      ? 'User has been blocked successfully'
-      : 'User has been unblocked successfully';
-      
-    return ({
-      message,
-    });
-  }
+  //   const message = updatedUser.isBlocked
+  //     ? 'User has been blocked successfully'
+  //     : 'User has been unblocked successfully';
+
+  //   return {
+  //     message,
+  //   };
+  // }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)

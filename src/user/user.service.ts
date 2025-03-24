@@ -81,6 +81,13 @@ export class UserService {
     return user;
   }
 
+  async toggleBlockUser(
+    currentUser: User,
+    userIdForBlock: string,
+  ): Promise<boolean> {
+    return await this.userStore.toggleBlockUser(currentUser, userIdForBlock);
+  }
+
   async verifyUser(id: string) {
     this.findUserById(id);
     return await this.userStore.verifyUser(id);

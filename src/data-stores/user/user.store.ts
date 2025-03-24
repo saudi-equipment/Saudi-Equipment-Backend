@@ -324,4 +324,29 @@ export class UserStore {
       throw new error();
     }
   }
+
+  async toggleBlockUser(
+      currentUser: User,
+      userIdForBlock: string,
+    ): Promise<boolean> {
+  
+      const objeUserId = new Types.ObjectId(userIdForBlock);
+      const isAlreadyBlocked = currentUser.blockedUsers.includes(objeUserId);
+  
+      if (isAlreadyBlocked) {
+        await this.userModel.findByIdAndUpdate(
+          currentUser._id,
+          { $pull: { blockedUsers: userIdForBlock } },
+          { new: true },
+        );
+        return false;
+      } else {
+        await this.userModel.findByIdAndUpdate(
+          currentUser._id,
+          { $addToSet: { blockedUsers: userIdForBlock } },
+          { new: true },
+        );
+        return true;
+      }
+    }
 }
