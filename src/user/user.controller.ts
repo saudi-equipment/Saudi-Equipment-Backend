@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   HttpStatus,
-  NotFoundException,
   Param,
   Patch,
   Post,
@@ -131,12 +130,6 @@ export class UserController {
     @GetUser() currentUser: User,
   ) {
     const userIdForBlock = userId;
-
-    const userToToggle = await this.userService.findUserById(userIdForBlock);
-    if (!userToToggle) {
-      throw new NotFoundException('User not found');
-    }
-
     const isBlocked = await this.userService.toggleBlockUser(
       currentUser,
       userIdForBlock,
@@ -160,20 +153,20 @@ export class UserController {
     return await this.userService.updateUserByAdmin(payload, id);
   }
 
-  // @UseGuards(RolesGuard)
-  // @Roles(UserRole.ADMIN)
-  // @Patch('block/:userId')
-  // async blockUser(@Param('userId') userId: string) {
-  //   const updatedUser = await this.userService.blockUser(userId);
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Patch(':userId/block')
+  async blockUser(@Param('userId') userId: string) {
+    const updatedUser = await this.userService.blockUser(userId);
 
-  //   const message = updatedUser.isBlocked
-  //     ? 'User has been blocked successfully'
-  //     : 'User has been unblocked successfully';
+    const message = updatedUser.isBlocked
+      ? 'User has been blocked successfully'
+      : 'User has been unblocked successfully';
 
-  //   return {
-  //     message,
-  //   };
-  // }
+    return {
+      message,
+    };
+  }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)

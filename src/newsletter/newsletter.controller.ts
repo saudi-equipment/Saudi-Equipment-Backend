@@ -30,7 +30,6 @@ export class NewsletterController {
     @Body() payload: ContactUsDto,
   ) {
     try {
-      console.log("Payload------------------>", payload)
       const data = await this.newsLetterService.createContactUs(payload);
       return response
         .status(HttpStatus.CREATED)
@@ -42,4 +41,10 @@ export class NewsletterController {
       });
     }
   }
+
+  // async getAllContactList(){
+
+  //   retun await this.getAllContactList()
+  // }
+
 }

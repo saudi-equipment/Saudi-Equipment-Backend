@@ -86,14 +86,11 @@ export class NotificationService {
 
   async sendContactEmail(contactData: ContactUsDto) {
     try {
-      // console.log(
-      //   'Received contact data:',
-      //   JSON.stringify(contactData, null, 2),
-      // );
+
       const info = await this.transporter.sendMail({
-        from: contactData.email,
+        from: this.configService.get<string>('SMTP_USER'),
         to: this.configService.get<string>('SMTP_USER'),
-        subject: contactData.subject,
+        subject: `${contactData.subject} (from: ${contactData.email})`,
         html: `
           <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
             <h2 style="color: #333; text-align: center;">New Contact Inquiry</h2>
@@ -113,8 +110,6 @@ export class NotificationService {
         `,
       });
 
-      // Log the email sending result
-      // console.log('Email sent successfully:', JSON.stringify(info, null, 2));
       return info;
     } catch (error) {
       throw error;

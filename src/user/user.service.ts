@@ -158,6 +158,7 @@ export class UserService {
 
   async getUserById(userId: string): Promise<IUser | null> {
     const user = await this.userStore.findById(userId);
+    user.password = undefined
     return user;
   }
 
@@ -258,10 +259,12 @@ export class UserService {
   }
 
   async blockUser(userId: string): Promise<IUser | null> {
+    await this.findUserById(userId);
     return await this.userStore.blockUser(userId);
   }
 
   async deleteUser(id: string): Promise<void> {
+    await this.findUserById(id)
     return await this.userStore.deleteUserByAdmin(id);
   }
 
@@ -269,12 +272,9 @@ export class UserService {
     phoneNumber?: string,
   ): Promise<IUser | null> {
     const user =
-      await this.userStore.findExistingUserByPhoneNumber(phoneNumber);
+      await this.findExistingUserByPhoneNumber(phoneNumber);
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    if (user.isBlocked == true) {
+    if (user.isBlocked == true || user.isActive == false) {
       throw new ForbiddenException(
         'Your account is blocked. Please contact saudi-equipment support team to activate your account',
       );
@@ -289,7 +289,7 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    if (user.isBlocked == true) {
+    if (user.isBlocked == true || user.isActive == false) {
       throw new ForbiddenException(
         'Your account is blocked. Please contact saudi-equipment support team to activate your account',
       );
@@ -304,7 +304,7 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    if (user.isBlocked == true) {
+    if (user.isBlocked == true || user.isActive == false) {
       throw new ForbiddenException(
         'Your account is blocked. Please contact saudi-equipment support team to activate your account',
       );
