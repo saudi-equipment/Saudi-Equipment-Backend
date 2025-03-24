@@ -45,6 +45,9 @@ export class User extends Document {
   @Prop({ required: false, default: false })
   isBlocked?: boolean;
 
+  @Prop({ type: [Types.ObjectId], ref: 'User', required: false, default: [] })
+  blockedUsers?: Types.ObjectId[];
+
   @Prop({ required: false, default: false })
   isPremiumUser?: boolean;
 

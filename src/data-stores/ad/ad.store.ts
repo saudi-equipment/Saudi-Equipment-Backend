@@ -261,6 +261,15 @@ export class AdStore {
         filters.createdBy = { $ne: userId };
       }
 
+      const currentUser = await this.userModel
+        .findById(userId)
+        .select('blockedUsers');
+      const blockedUserIds = currentUser?.blockedUsers || [];
+
+      if (blockedUserIds.length > 0) {
+        filters.createdBy = { ...filters.createdBy, $nin: blockedUserIds };
+      }
+
       if (category) {
         if (Array.isArray(category)) {
           filters.category = {
@@ -291,13 +300,17 @@ export class AdStore {
         }
       }
 
-      if (search) {
-        filters.titleEn = { $regex: search, $options: 'i' };
-      }
+        if (search) {
+          filters.$or = [
+            { titleEn: { $regex: search, $options: 'i' } },
+            { titleAr: { $regex: search, $options: 'i' } }, 
+          ];
+        }
 
-      if (city && city.toLowerCase() !== 'saudi-arabia') {
-        filters.city = { $regex: new RegExp(city, 'i') };
-      }
+       const cityFilter =
+         city && city.toLowerCase() !== 'saudi-arabia'
+           ? { city: { $regex: new RegExp(city, 'i') } }
+           : {};
 
       if (isPromoted) {
         filters.isPromoted = true;
@@ -340,9 +353,14 @@ export class AdStore {
         }
       }
 
+        const promotedFilters = { ...filters, isPromoted: true };
+        const regularFilters = { ...filters, isPromoted: false, ...cityFilter };
+
       const pipeline: any[] = [
         {
-          $match: filters,
+          $match: {
+            $or: [promotedFilters, regularFilters], 
+          },
         },
         {
           $addFields: {
@@ -383,54 +401,58 @@ export class AdStore {
       const totalCountResult = await this.adModel.aggregate(totalCountPipeline);
       const totalAds = totalCountResult[0]?.totalAds || 0;
 
-      if (isHome) {
-        pipeline.push({
-          $facet: {
-            promotedAds: [{ $match: { isPromoted: true } }, { $limit: 4 }],
-            saleAds: [
-              { $match: { category: { $regex: /Sale/i } } },
-              { $limit: 4 },
-            ],
-            rentAds: [
-              { $match: { category: { $regex: /Rent/i } } },
-              { $limit: 4 },
-            ],
-            demandAds: [
-              { $match: { category: { $regex: /Demand/i } } },
-              { $limit: 4 },
-            ],
-          },
-        });
+       if (isHome) {
+         pipeline.push({
+           $facet: {
+             promotedAds: [{ $match: promotedFilters }, { $limit: 4 }],
+             saleAds: [
+               { $match: { ...regularFilters, category: { $regex: /Sale/i } } },
+               { $limit: 4 },
+             ],
+             rentAds: [
+               { $match: { ...regularFilters, category: { $regex: /Rent/i } } },
+               { $limit: 4 },
+             ],
+             demandAds: [
+               {
+                 $match: { ...regularFilters, category: { $regex: /Demand/i } },
+               },
+               { $limit: 4 },
+             ],
+           },
+         });
 
-        const result = await this.adModel.aggregate(pipeline);
-        return {
-          totalAds,
-          promotedAds: result[0]?.promotedAds || [],
-          saleAds: result[0]?.saleAds || [],
-          rentAds: result[0]?.rentAds || [],
-          demandAds: result[0]?.demandAds || [],
-        };
-      } else {
-        pipeline.push(
-          { $skip: skip },
-          { $limit: limit },
-          {
-            $project: {
-              user: 0,
-            },
-          },
-        );
+         const result = await this.adModel.aggregate(pipeline);
+         return {
+           totalAds,
+           promotedAds: result[0]?.promotedAds || [],
+           saleAds: result[0]?.saleAds || [],
+           rentAds: result[0]?.rentAds || [],
+           demandAds: result[0]?.demandAds || [],
+         };
+       } else {
+         pipeline.push(
+           { $skip: skip },
+           { $limit: limit },
+           {
+             $project: {
+               user: 0,
+             },
+           },
+         );
 
-        const result = await this.adModel.aggregate(pipeline);
-        return {
-          totalAds,
-          ads: result,
-        };
-      }
+         const result = await this.adModel.aggregate(pipeline);
+         return {
+           totalAds,
+           ads: result,
+         };
+       }
     } catch (error) {
       throw error;
     }
   }
+
+  
 
   async getMyAds(user: User): Promise<IAd[]> {
     try {
