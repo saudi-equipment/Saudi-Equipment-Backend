@@ -81,30 +81,18 @@ export class UserStore {
     );
   }
 
-
   async findById(id: string): Promise<IUser | null> {
     const user = await this.userModel
-      .findById(id) 
+      .findById(id)
       .select('-ads')
-      .select('-__v') 
+      .select('-__v')
       .populate({
-        path: 'subscription', 
+        path: 'subscription',
         select: '-__v',
       })
       .exec();
 
     return user;
-  }
-
-  async activateOrDeactivateAccount(user: User): Promise<IUser | null> {
-    const updatedUser = await this.userModel
-      .findOneAndUpdate(
-        { _id: user.id },
-        { $set: { isActive: !user.isActive } },
-        { new: true },
-      )
-      .select('-password');
-    return updatedUser;
   }
 
   async verifyUser(id: string) {
@@ -145,25 +133,36 @@ export class UserStore {
     }
   }
 
-  async blockUser(userId: string): Promise<IUser | null>{
+  async activateOrDeactivateAccount(user: User): Promise<IUser | null> {
+    const updatedUser = await this.userModel
+      .findOneAndUpdate(
+        { _id: user.id },
+        { $set: { isActive: !user.isActive } },
+        { new: true },
+      )
+      .select('-password');
+    return updatedUser;
+  }
+
+  async blockUser(userId: string): Promise<IUser | null> {
     try {
-     const user = await this.userModel.findById(userId).select('-password');
+      const user = await this.userModel.findById(userId).select('-password');
 
-     if (!user) {
-       throw new Error('User not found');
-     }
+      if (!user) {
+        throw new Error('User not found');
+      }
 
-     const updatedUser = await this.userModel
-       .findOneAndUpdate(
-         { _id: new Types.ObjectId(userId) },
-         { $set: { isBlocked: !user.isBlocked } },
-         { new: true }, 
-       )
-       .select('-password');
+      const updatedUser = await this.userModel
+        .findOneAndUpdate(
+          { _id: new Types.ObjectId(userId) },
+          { $set: { isBlocked: !user.isBlocked, isActive: !user.isActive } },
+          { new: true },
+        )
+        .select('-password');
 
-     return updatedUser;
+      return updatedUser;
     } catch (error) {
-      throw error
+      throw error;
     }
   }
 
@@ -326,27 +325,26 @@ export class UserStore {
   }
 
   async toggleBlockUser(
-      currentUser: User,
-      userIdForBlock: string,
-    ): Promise<boolean> {
-  
-      const objeUserId = new Types.ObjectId(userIdForBlock);
-      const isAlreadyBlocked = currentUser.blockedUsers.includes(objeUserId);
-  
-      if (isAlreadyBlocked) {
-        await this.userModel.findByIdAndUpdate(
-          currentUser._id,
-          { $pull: { blockedUsers: userIdForBlock } },
-          { new: true },
-        );
-        return false;
-      } else {
-        await this.userModel.findByIdAndUpdate(
-          currentUser._id,
-          { $addToSet: { blockedUsers: userIdForBlock } },
-          { new: true },
-        );
-        return true;
-      }
+    currentUser: User,
+    userIdForBlock: string,
+  ): Promise<boolean> {
+    const objeUserId = new Types.ObjectId(userIdForBlock);
+    const isAlreadyBlocked = currentUser.blockedUsers.includes(objeUserId);
+
+    if (isAlreadyBlocked) {
+      await this.userModel.findByIdAndUpdate(
+        currentUser._id,
+        { $pull: { blockedUsers: userIdForBlock } },
+        { new: true },
+      );
+      return false;
+    } else {
+      await this.userModel.findByIdAndUpdate(
+        currentUser._id,
+        { $addToSet: { blockedUsers: userIdForBlock } },
+        { new: true },
+      );
+      return true;
     }
+  }
 }

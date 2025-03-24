@@ -51,4 +51,9 @@ export class UserUpdateDto {
   @IsString()
   instaLink?: string;
 
+  @ApiProperty({ description: 'User status', type: Boolean })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  isPremiumUser: boolean;
 }
