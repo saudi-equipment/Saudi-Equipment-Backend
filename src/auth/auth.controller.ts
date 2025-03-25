@@ -56,7 +56,7 @@ export class AuthController {
   @Post('verify-otp')
   async verifyOtp(@Res() response, @Body() payload: VerifyOtpDto) {
     try {
-      await this.userService.checkUserBlockStatusByPhoneNumber(payload.email);
+      // await this.userService.checkUserBlockStatusByPhoneNumber(payload.email);
       const data = await this.otpService.verifyOtp(payload);
       return response.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -90,9 +90,9 @@ export class AuthController {
   @Post('forgot-password')
   async forgotPassword(@Res() response, @Body() payload: ForgotPasswordDto) {
     try {
-      await this.userService.checkUserBlockStatusByPhoneNumber(
-        payload.phoneNumber,
-      );
+      // await this.userService.checkUserBlockStatusByPhoneNumber(
+      //   payload.phoneNumber,
+      // );
       const phoneNumber = payload.phoneNumber;
       const data = await this.otpService.sendOtp(phoneNumber);
 
@@ -110,7 +110,7 @@ export class AuthController {
   @Put('reset-password')
   async resetPassword(@Res() response, @Body() payload: ResetPasswordDto) {
     try {
-      await this.userService.checkUserBlockStatusByUserId(payload.userId);
+      // await this.userService.checkUserBlockStatusByUserId(payload.userId);
       const data = await this.authService.resetPassword(payload);
       return response.status(HttpStatus.OK).json(data);
     } catch (error) {

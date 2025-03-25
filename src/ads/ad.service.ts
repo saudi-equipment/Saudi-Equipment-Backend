@@ -157,6 +157,27 @@ export class AdService {
     }
   }
 
+  async getAllReportedAds(query: GetAllAdQueryDto) {
+    try {
+      const { page, limit } = query;
+      const { skip, limit: currentLimit } = getPagination({ page, limit });
+
+      const ads = await this.adStore.getAllReportedAds(
+        query,
+        skip,
+        currentLimit,
+      );
+
+      if (!ads) {
+        throw new NotFoundException('Ads not found');
+      }
+
+      return ads;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getAdById(id: string) {
     try {
       const ad = await this.adStore.getAdById(id);

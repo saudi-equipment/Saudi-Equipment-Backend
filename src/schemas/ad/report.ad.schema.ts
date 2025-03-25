@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types, Document } from 'mongoose';
 import { User } from '../user/user.schema';
+import { Ad } from './ad.schema';
 
 @Schema()
 export class ReportAd extends Document {
@@ -11,10 +12,10 @@ export class ReportAd extends Document {
   reportType: string;
 
   @Prop({ required: true })
-  adId: string;
-
-  @Prop({ required: true })
   message: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Ad', required: false })
+  ad: Ad;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: false })
   user: User;

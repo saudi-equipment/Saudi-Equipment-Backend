@@ -1,7 +1,7 @@
-import { User } from "aws-sdk/clients/budgets";
+import { User } from 'src/schemas/user/user.schema';
 
 export interface IAd {
-  id: string,
+  id: string;
   category: string;
   fuelType: string;
   condition: string;
@@ -21,17 +21,17 @@ export interface IAd {
   youTubeLink: string;
   views: number;
   userId: string;
-  isSold?:boolean,
-  soldDate?: Date, 
+  isSold?: boolean;
+  soldDate?: Date;
   duration?: string;
   paymentType?: string;
-  paymentCompany?:string;
+  paymentCompany?: string;
   transactionId?: string;
-  user?: User, 
-  promotionPlan?: string,
-  promotionStartDate?: Date,
-  promotionEndDate?:  Date,
+  user?: User;
+  promotionPlan?: string;
+  promotionStartDate?: Date;
+  promotionEndDate?: Date;
   images: string[];
-  createdAt: Date,
-  updatedAt: Date
+  createdAt: Date;
+  updatedAt: Date;
 }
