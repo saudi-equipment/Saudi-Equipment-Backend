@@ -180,6 +180,102 @@ export class AdStore {
     }
   }
 
+  async getAllReportedAds(
+    query: GetAllAdQueryDto,
+    skip: number,
+    currentLimit: number,
+  ): Promise<{
+    reports: IReportAd[];
+    totalReports: number;
+  }> {
+    const { search, sortType, orderType } = query;
+
+    const matchStage: any = {};
+
+    if (search) {
+      matchStage.$or = [
+        { reportedBy: { $regex: search, $options: 'i' } },
+        { reportType: { $regex: search, $options: 'i' } },
+        { message: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const sortStage: Record<string, any> = {};
+
+    if (sortType === 'Newest') {
+      sortStage.createdAt = -1;
+    } else if (sortType === 'Oldest') {
+      sortStage.createdAt = 1;
+    }
+
+    if (orderType === 'A-Z') {
+      sortStage.reportedBy = 1;
+    } else if (orderType === 'Z-A') {
+      sortStage.reportedBy = -1;
+    }
+
+    const aggregationPipeline = [
+      { $match: matchStage },
+      { $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 } },
+      {
+        $facet: {
+          reportList: [
+            { $skip: skip },
+            { $limit: currentLimit },
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'user',
+                foreignField: '_id',
+                as: 'user',
+              },
+            },
+            {
+              $lookup: {
+                from: 'ads',
+                localField: 'ad',
+                foreignField: '_id',
+                as: 'ad',
+              },
+            },
+            { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: '$ad', preserveNullAndEmptyArrays: true } },
+            {
+              $project: {
+                reportedBy: 1,
+                reportType: 1,
+                adId: 1,
+                ad: 1,
+                message: 1,
+                createdAt: 1,
+                'user._id': 1,
+                'user.name': 1,
+                'user.email': 1,
+                
+              },
+            },
+          ],
+          totalCount: [{ $count: 'count' }],
+        },
+      },
+      {
+        $project: {
+          reports: '$reportList',
+          totalReports: { $arrayElemAt: ['$totalCount.count', 0] },
+        },
+      },
+    ];
+
+    const result = await this.reportAdModel
+      .aggregate(aggregationPipeline)
+      .exec();
+
+    return {
+      totalReports: result[0]?.totalReports || 0,
+      reports: result[0]?.reports || [],
+    };
+  }
+
   async getAllAdsForAdmin(
     skip: number,
     limit: number,
@@ -502,50 +598,70 @@ export class AdStore {
     try {
       const reportedAd = new this.reportAdModel({
         reportedBy: userId,
-        adId: adId,
+        ad: new Types.ObjectId(adId),
         user: new Types.ObjectId(userId),
         ...payload,
       });
 
-      await reportedAd.save();
-
-      const result = await this.reportAdModel.aggregate([
-        {
-          $match: { _id: reportedAd._id },
-        },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'user',
-            foreignField: '_id',
-            as: 'user',
-          },
-        },
-        {
-          $unwind: {
-            path: '$user',
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $project: {
-            _id: 1,
-            reportedBy: 1,
-            reportType: 1,
-            adId: 1,
-            message: 1,
-            reporterName: '$user.name',
-            reporterEmail: '$user.email',
-            reporterPhoneNumber: '$user.phoneNumber',
-          },
-        },
-      ]);
-
-      return result[0];
+      await reportedAd.save()
+      return reportedAd
     } catch (error) {
       throw error;
     }
   }
+  
+  // async reportAd(
+  //   adId: string,
+  //   userId: string,
+  //   payload: ReportAdDto,
+  // ): Promise<IReportAd> {
+  //   try {
+  //     const reportedAd = new this.reportAdModel({
+  //       reportedBy: userId,
+  //       ad: new Types.ObjectId(adId),
+  //       user: new Types.ObjectId(userId),
+  //       ...payload,
+  //     });
+
+  //     await reportedAd.save();
+
+  //     const result = await this.reportAdModel.aggregate([
+  //       {
+  //         $match: { _id: reportedAd._id },
+  //       },
+  //       {
+  //         $lookup: {
+  //           from: 'users',
+  //           localField: 'user',
+  //           foreignField: '_id',
+  //           as: 'user',
+  //         },
+  //       },
+  //       {
+  //         $unwind: {
+  //           path: '$user',
+  //           preserveNullAndEmptyArrays: true,
+  //         },
+  //       },
+  //       {
+  //         $project: {
+  //           _id: 1,
+  //           reportedBy: 1,
+  //           reportType: 1,
+  //           adId: 1,
+  //           message: 1,
+  //           reporterName: '$user.name',
+  //           reporterEmail: '$user.email',
+  //           reporterPhoneNumber: '$user.phoneNumber',
+  //         },
+  //       },
+  //     ]);
+
+  //     return result[0];
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 
   async expireUserAds(userId: string) {
     try {

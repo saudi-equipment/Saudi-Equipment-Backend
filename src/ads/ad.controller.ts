@@ -60,6 +60,17 @@ export class AdController {
   }
 
   @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('reported-ads')
+  async getAllReportedAds(@Query() query: GetAllAdQueryDto) {
+    try {
+      return await this.adService.getAllReportedAds(query);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @UseGuards(RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Post('create-ad')
   @UseInterceptors(FilesInterceptor('files', 10))
@@ -229,14 +240,21 @@ export class AdController {
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Delete(':id')
   async deleteAd(@Res() response, @Param('id') id: string) {
-    const result = await this.adService.deleteAd(id);
-    if (result) {
-      return response.status(200).json({
-        message: 'Ad successfully deleted',
-      });
-    } else {
-      return response.status(400).json({
-        message: 'Failed to delete the ad',
+    try {
+      const result = await this.adService.deleteAd(id);
+      if (result) {
+        return response.status(200).json({
+          message: 'Ad successfully deleted',
+        });
+      } else {
+        return response.status(404).json({
+          message: 'Ad not found',
+        });
+      }
+    } catch (error) {
+      return response.status(500).json({
+        message: 'Error deleting ad',
+        error: error.message,
       });
     }
   }
