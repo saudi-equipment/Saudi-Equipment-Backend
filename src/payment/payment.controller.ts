@@ -5,21 +5,23 @@ import { RolesGuard } from 'src/auth/guard/roles.gurad';
 import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
 import { Public } from 'src/decorators/public.routes.decorator';
+import { MoyasarService } from 'src/moyasar/moyasar.service';
 @UseGuards(RolesGuard)
 @Roles(UserRole.USER)
 @Controller('payment')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) {}
-  
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly moyasarService: MoyasarService,
+  ) {}
+
   @Post()
-  createPayment(
-    @Body() payload: any
-  ) {
+  createPayment(@Body() payload: any) {
     try {
       const result = this.paymentService.createPaymentSession(payload);
-      return result
+      return result;
     } catch (error) {
-      error
+      error;
     }
   }
 
@@ -55,7 +57,6 @@ export class PaymentController {
       return await this.paymentService.getSubscription(userId);
     } catch (error) {
       throw error;
-
     }
   }
 
@@ -70,5 +71,10 @@ export class PaymentController {
     } catch (error) {
       throw error;
     }
+  }
+
+  @Get('moyasar/:id')
+  async getPayment(@Param('id') id: string) {
+    return this.moyasarService.getPayment(id);
   }
 }

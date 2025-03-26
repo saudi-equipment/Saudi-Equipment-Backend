@@ -123,6 +123,8 @@ export class UserController {
     return await this.userService.addUserByAdmin(payload);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.USER)
   @Post('block/:userId')
   async toggleBlockUser(
     @Param('userId') userId: string,

@@ -12,6 +12,7 @@ import { PaymentModule } from './payment/payment.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { AdminModule } from './admin/admin.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
+import { MoyasarModule } from './moyasar/moyasar.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { NewsletterModule } from './newsletter/newsletter.module';
     WebhooksModule,
     AdminModule,
     NewsletterModule,
+    MoyasarModule,
   ],
   controllers: [AppController],
   providers: [AppService],
