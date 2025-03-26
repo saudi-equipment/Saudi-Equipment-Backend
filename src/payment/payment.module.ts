@@ -9,12 +9,14 @@ import { adsSchema } from 'src/schemas/ad/ad.schema';
 import { PaymentStore } from 'src/data-stores/payment/payment.data.store';
 import { AdModule } from 'src/ads/ad.module';
 import { UserModule } from 'src/user/user.module';
+import { MoyasarModule } from 'src/moyasar/moyasar.module';
 
 @Module({
   imports: [
     forwardRef(() => WebhooksModule),
     forwardRef(() => AdModule),
     forwardRef(() => UserModule),
+    MoyasarModule,
     MongooseModule.forFeature([
       { name: 'Subscription', schema: subscriptionSchema },
       { name: 'User', schema: userSchema },
