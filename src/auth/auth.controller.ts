@@ -79,7 +79,7 @@ export class AuthController {
   @Post('resend-otp')
   async resSendOtp(@Body() payload: ResendOtpDto) {
     try {
-      await this.userService.checkUserBlockStatusByEmail(payload.email);
+      // await this.userService.checkUserBlockStatusByEmail(payload.email);
       return await this.otpService.resendOpt(payload);
     } catch (error) {
       throw error;
@@ -90,9 +90,9 @@ export class AuthController {
   @Post('forgot-password')
   async forgotPassword(@Res() response, @Body() payload: ForgotPasswordDto) {
     try {
-      // await this.userService.checkUserBlockStatusByPhoneNumber(
-      //   payload.phoneNumber,
-      // );
+      await this.userService.checkUserBlockStatusByPhoneNumber(
+        payload.phoneNumber,
+      );
       const phoneNumber = payload.phoneNumber;
       const data = await this.otpService.sendOtp(phoneNumber);
 

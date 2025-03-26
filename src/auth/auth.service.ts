@@ -33,7 +33,7 @@ export class AuthService {
 
   async signUp(payload: SignUpDto) {
     
-    await this.userService.findExistingUserByPhoneNumber(payload.phoneNumber)
+    await this.userService.findExistingUserByNumber(payload.phoneNumber)
     await this.userService.findExistingUser(payload.email);
     validatePassword(payload.password, payload.confirmPassword);
   

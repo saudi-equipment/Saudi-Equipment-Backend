@@ -39,6 +39,17 @@ export class UserService {
     return user;
   }
 
+  async findExistingUserByNumber(
+    phoneNumber: string,
+  ): Promise<IUser | null> {
+    const user =
+      await this.userStore.findExistingUserByPhoneNumber(phoneNumber);
+    if (user) {
+      throw new ConflictException('Phone number is already exist');
+    }
+    return user;
+  }
+
   async updatePassword(hashedPassword: string, phoneNumber: string) {
     return await this.userStore.updatedPassword(hashedPassword, phoneNumber);
   }
@@ -66,7 +77,7 @@ export class UserService {
   async findExistingUser(email: string): Promise<IUser | null> {
     const user = await this.userStore.findExistingUser(email);
     if (user) {
-      throw new ConflictException('User is already exist');
+      throw new ConflictException('Email is already exist');
     }
     return user;
   }
@@ -158,7 +169,7 @@ export class UserService {
 
   async getUserById(userId: string): Promise<IUser | null> {
     const user = await this.userStore.findById(userId);
-    user.password = undefined
+    user.password = undefined;
     return user;
   }
 
@@ -264,15 +275,14 @@ export class UserService {
   }
 
   async deleteUser(id: string): Promise<void> {
-    await this.findUserById(id)
+    await this.findUserById(id);
     return await this.userStore.deleteUserByAdmin(id);
   }
 
   async checkUserBlockStatusByPhoneNumber(
     phoneNumber?: string,
   ): Promise<IUser | null> {
-    const user =
-      await this.findExistingUserByPhoneNumber(phoneNumber);
+    const user = await this.findExistingUserByPhoneNumber(phoneNumber);
 
     if (user.isBlocked == true || user.isActive == false) {
       throw new ForbiddenException(
