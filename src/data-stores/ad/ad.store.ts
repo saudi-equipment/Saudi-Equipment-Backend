@@ -415,6 +415,9 @@ export class AdStore {
         filters.$or = [
           { titleEn: { $regex: search, $options: 'i' } },
           { titleAr: { $regex: search, $options: 'i' } },
+          { adId: { $regex: search, $options: 'i' } },
+          { city: { $regex: search, $options: 'i' } },
+          { fuelType: { $regex: search, $options: 'i' } },
         ];
       }
 
@@ -586,8 +589,8 @@ export class AdStore {
     }
   }
 
-  async deleteUserAds(user: User) {
-    return await this.adModel.deleteMany({ createdBy: user.id });
+  async deleteUserAds(id: string) {
+    return await this.adModel.deleteMany({ createdBy: id });
   }
 
   async reportAd(
@@ -609,60 +612,7 @@ export class AdStore {
       throw error;
     }
   }
-  
-  // async reportAd(
-  //   adId: string,
-  //   userId: string,
-  //   payload: ReportAdDto,
-  // ): Promise<IReportAd> {
-  //   try {
-  //     const reportedAd = new this.reportAdModel({
-  //       reportedBy: userId,
-  //       ad: new Types.ObjectId(adId),
-  //       user: new Types.ObjectId(userId),
-  //       ...payload,
-  //     });
-
-  //     await reportedAd.save();
-
-  //     const result = await this.reportAdModel.aggregate([
-  //       {
-  //         $match: { _id: reportedAd._id },
-  //       },
-  //       {
-  //         $lookup: {
-  //           from: 'users',
-  //           localField: 'user',
-  //           foreignField: '_id',
-  //           as: 'user',
-  //         },
-  //       },
-  //       {
-  //         $unwind: {
-  //           path: '$user',
-  //           preserveNullAndEmptyArrays: true,
-  //         },
-  //       },
-  //       {
-  //         $project: {
-  //           _id: 1,
-  //           reportedBy: 1,
-  //           reportType: 1,
-  //           adId: 1,
-  //           message: 1,
-  //           reporterName: '$user.name',
-  //           reporterEmail: '$user.email',
-  //           reporterPhoneNumber: '$user.phoneNumber',
-  //         },
-  //       },
-  //     ]);
-
-  //     return result[0];
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
+ 
   async expireUserAds(userId: string) {
     try {
       const currentDate = new Date();

@@ -5,6 +5,7 @@ import { IAd } from 'src/interfaces/ads';
 import { ISubscription } from 'src/interfaces/payment/subscription.interface';
 import { IUser } from 'src/interfaces/user';
 import * as moment from 'moment';
+import { CommonQueryDto } from 'src/common/dtos';
 
 @Injectable()
 export class PaymentStore {
@@ -49,7 +50,6 @@ export class PaymentStore {
           throw new Error('Invalid subscription plan');
       }
 
-      // Check if the user already has a subscription
       const existingSubscription = await this.subscriptionModel.findOne({
         user: new Types.ObjectId(userId),
       });
@@ -57,7 +57,6 @@ export class PaymentStore {
       let subscription;
 
       if (existingSubscription) {
-        // Update the existing subscription
         subscription = await this.subscriptionModel.findByIdAndUpdate(
           existingSubscription._id,
           {
@@ -73,10 +72,9 @@ export class PaymentStore {
             paymentCompany,
             ...payload,
           },
-          { new: true }, // Return the updated document
+          { new: true },
         );
       } else {
-        // Create a new subscription
         subscription = new this.subscriptionModel({
           subscribedBy: userId,
           transactionId,
@@ -96,7 +94,6 @@ export class PaymentStore {
         await subscription.save();
       }
 
-      // Update the user's subscription field
       await this.userModel.findByIdAndUpdate(
         userId,
         { subscription: subscription._id },
@@ -155,6 +152,138 @@ export class PaymentStore {
     } catch (error) {
       throw new Error(`Error fetching subscription: ${error.message}`);
     }
+  }
+
+  async getAllPaymentDetails(
+    skip: number,
+    currentLimit: number,
+    query: CommonQueryDto,
+  ): Promise<{
+    adPayments: any[];
+    subscriptionPayments: any[];
+    totalAdPayments: number;
+    totalSubscriptionPayments: number;
+    combinedTotal: number;
+  }> {
+    const { search, sortType, orderType } = query;
+
+    // Common match stage for both collections
+    const baseMatch: any = {
+      transactionId: { $exists: true, $ne: null },
+    };
+
+    if (search) {
+      baseMatch.$or = [
+        { transactionId: { $regex: search, $options: 'i' } },
+        { paymentType: { $regex: search, $options: 'i' } },
+        { paymentCompany: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    // Sort configuration
+    const sortConfig: Record<string, 1 | -1> = this.getSortConfig(
+      sortType,
+      orderType,
+    );
+
+    // Query Ads payments with count
+    const [adPayments, adCountResult] = await Promise.all([
+      this.adModel.aggregate([
+        { $match: baseMatch },
+        { $sort: sortConfig },
+        { $skip: skip },
+        { $limit: currentLimit },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+        { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            transactionId: 1,
+            paymentType: 1,
+            paymentCompany: 1,
+            amount: '$price',
+            currency: 1,
+            createdAt: 1,
+            user: 1,
+            type: { $literal: 'ad' },
+            details: {
+              adId: '$_id',
+              titleEn: '$titleEn',
+              isPromoted: '$isPromoted',
+              promotionPlan: '$promotionPlan',
+            },
+          },
+        },
+      ]),
+      this.adModel.countDocuments(baseMatch),
+    ]);
+
+    // Query Subscription payments with count
+    const [subscriptionPayments, subscriptionCountResult] = await Promise.all([
+      this.subscriptionModel.aggregate([
+        { $match: baseMatch },
+        { $sort: sortConfig },
+        { $skip: skip },
+        { $limit: currentLimit },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+        { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            transactionId: 1,
+            paymentType: 1,
+            paymentCompany: 1,
+            amount: '$price',
+            currency: 1,
+            plan: '$plan',
+            duration: '$duration',
+            subscriptionStatus: '$subscriptionStatus',
+            type: { $literal: 'subscription' },
+            createdAt: 1,
+            updatedAt: 1,
+            'user.name': 1,
+          },
+        },
+      ]),
+      this.subscriptionModel.countDocuments(baseMatch),
+    ]);
+
+    return {
+      adPayments,
+      subscriptionPayments,
+      totalAdPayments: adCountResult,
+      totalSubscriptionPayments: subscriptionCountResult,
+      combinedTotal: adCountResult + subscriptionCountResult,
+    };
+  }
+
+  private getSortConfig(
+    sortType: string,
+    orderType: string,
+  ): Record<string, 1 | -1> {
+    if (sortType === 'Oldest') {
+      return { createdAt: 1 };
+    }
+    if (orderType === 'A-Z') {
+      return { transactionId: 1 };
+    }
+    if (orderType === 'Z-A') {
+      return { transactionId: -1 };
+    }
+    // Default: newest first
+    return { createdAt: -1 };
   }
 
   async expireUserSubscription(userId: string): Promise<void> {
