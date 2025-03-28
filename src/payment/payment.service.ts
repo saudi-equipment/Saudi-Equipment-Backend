@@ -5,6 +5,8 @@ import { UserStore } from 'src/data-stores/user/user.store';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import { UserService } from 'src/user/user.service';
+import { CommonQueryDto } from 'src/common/dtos';
+import { getPagination } from 'src/utils';
 
 @Injectable()
 export class PaymentService {
@@ -23,8 +25,8 @@ export class PaymentService {
   private paymentSessions: { [key: string]: any } = {};
 
   createPaymentSession(payload: any) {
-    const {amount} = payload
-    
+    const { amount } = payload;
+
     if (!amount || isNaN(amount) || amount <= 0) {
       throw new Error('Invalid amount');
     }
@@ -55,7 +57,7 @@ export class PaymentService {
       // if(existingSubscription){
       //   throw new ConflictException("Already subscribed this plan")
       // }
-      
+
       const subscription =
         await this.paymentStore.createOrUpdateSubscription(payload);
       const user = await this.userStore.makeUserPremium(subscription.user.id);
@@ -77,10 +79,24 @@ export class PaymentService {
     }
   }
 
-  async getSubscription(userId: string){
-    return await this.paymentStore.getSubscription(userId)
+  async getSubscription(userId: string) {
+    return await this.paymentStore.getSubscription(userId);
   }
 
+  async getAllPaymentDetails(query: CommonQueryDto) {
+    try {
+      const { page, limit } = query;
+      const { skip, limit: currentLimit } = getPagination({ page, limit });
+      const result = await this.paymentStore.getAllPaymentDetails(
+        skip,
+        currentLimit,
+        query,
+      );
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
 
   async expireUserSubscription(userId: string) {
     try {

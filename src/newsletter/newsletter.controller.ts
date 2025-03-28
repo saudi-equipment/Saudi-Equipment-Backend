@@ -15,8 +15,6 @@ import { NewsletterService } from './newsletter.service';
 import { Roles } from 'src/decorators/roles.decorator';
 import { RolesGuard } from 'src/auth/guard/roles.gurad';
 import { UserRole } from 'src/enums';
-import { User } from 'src/schemas/user/user.schema';
-import { GetUser } from 'src/decorators/user.decorator';
 import { ContactUsDto } from './dtos/contact.us.dto';
 import { Public } from 'src/decorators/public.routes.decorator';
 import { GetAllContactListQueryDto } from './dtos/get.all.contact.us.query.dto';

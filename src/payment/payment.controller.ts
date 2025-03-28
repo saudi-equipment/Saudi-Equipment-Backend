@@ -6,6 +6,7 @@ import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
 import { Public } from 'src/decorators/public.routes.decorator';
 import { MoyasarService } from 'src/moyasar/moyasar.service';
+import { CommonQueryDto } from 'src/common/dtos';
 @UseGuards(RolesGuard)
 @Roles(UserRole.USER)
 @Controller('payment')
@@ -55,6 +56,15 @@ export class PaymentController {
   async getSubscription(@GetUser('id') userId: string) {
     try {
       return await this.paymentService.getSubscription(userId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Get()
+  async getAllPaymentDetails(@Query() query: CommonQueryDto) {
+    try {
+      return await this.paymentService.getAllPaymentDetails(query);
     } catch (error) {
       throw error;
     }

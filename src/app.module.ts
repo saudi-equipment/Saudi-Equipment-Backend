@@ -13,10 +13,11 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { AdminModule } from './admin/admin.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { MoyasarModule } from './moyasar/moyasar.module';
+import { BannerAdModule } from './google.ad/banner.ad.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
+    ConfigModule.forRoot({  
       isGlobal: true,
       envFilePath: '.env',
     }),
@@ -31,6 +32,7 @@ import { MoyasarModule } from './moyasar/moyasar.module';
     AdminModule,
     NewsletterModule,
     MoyasarModule,
+    BannerAdModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -158,7 +158,7 @@ export class UserService {
   async deleteAccount(user: User) {
     try {
       await this.userStore.deleteUser(user);
-      await this.adStore.deleteUserAds(user);
+      await this.adStore.deleteUserAds(user.id);
       return {
         message: 'Account deleted successfylly',
       };
@@ -276,6 +276,7 @@ export class UserService {
 
   async deleteUser(id: string): Promise<void> {
     await this.findUserById(id);
+     await this.adStore.deleteUserAds(id);
     return await this.userStore.deleteUserByAdmin(id);
   }
 

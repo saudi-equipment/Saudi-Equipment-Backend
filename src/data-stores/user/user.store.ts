@@ -200,9 +200,14 @@ export class UserStore {
       role: { $ne: UserRole.ADMIN },
     };
 
-    if (search) {
-      matchStage.name = { $regex: search, $options: 'i' };
-    }
+      if (search) {
+        matchStage.$or = [
+          { name: { $regex: search, $options: 'i' } },
+          { phoneNumber: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+          { city: { $regex: search, $options: 'i' } },
+        ];
+      }
 
     const sortStage: Record<string, any> = {};
 
@@ -231,6 +236,7 @@ export class UserStore {
                 password: 0,
                 ads: 0,
                 subscriptions: 0,
+                blockedUsers: 0,
               },
             },
           ],
