@@ -20,6 +20,7 @@ import { OtpService } from './otp.service';
 import { IUser } from 'src/interfaces/user';
 import { hashPassword, validatePassword } from 'src/utils';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
+import { ChangeAdminPasswordDto } from './dtos/change.admin.password.dto';
 
 @Injectable()
 export class AuthService {
@@ -28,24 +29,22 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly otpService: OtpService,
     private readonly digitalOceanService: DigitalOceanService,
-  
   ) {}
 
   async signUp(payload: SignUpDto) {
-    
-    await this.userService.findExistingUserByNumber(payload.phoneNumber)
+    await this.userService.findExistingUserByNumber(payload.phoneNumber);
     await this.userService.findExistingUser(payload.email);
     validatePassword(payload.password, payload.confirmPassword);
-  
+
     const hashedPassword = await hashPassword(payload.password);
     const userData = { ...payload, password: hashedPassword };
-  
+
     const user = await this.userService.createUser(userData);
     const otp = await this.otpService.sendOtp(user.phoneNumber);
-  
+
     return { user, otp };
   }
-  
+
   async signIn(
     userLoginDto: LoginDto,
   ): Promise<{ token: string; otpId: string; user: IUser; message: string }> {
@@ -88,9 +87,7 @@ export class AuthService {
   async adminSignIn(
     adminLoginDto: AdminLoginDto,
   ): Promise<{ token: string; otpId: string; user: IUser; message: string }> {
-    const user = await this.userService.findAdminByEmail(
-      adminLoginDto.email,
-    );
+    const user = await this.userService.findAdminByEmail(adminLoginDto.email);
 
     if (user.isDeleted === true) {
       throw new UnauthorizedException('Admin Not Found');
@@ -134,15 +131,35 @@ export class AuthService {
       }
 
       if (payload.oldPassword === payload.newPassword) {
-        throw new BadRequestException('New password cannot be the same as the old password');
+        throw new BadRequestException(
+          'New password cannot be the same as the old password',
+        );
       }
-     
+
       validatePassword(payload.newPassword, payload.confirmedPassword);
 
       const hashedPassword = await hashPassword(payload.newPassword);
       await this.userService.updatePassword(hashedPassword, user.phoneNumber);
 
-      return { message: 'Password changed successfully'};
+      return { message: 'Password changed successfully' };
+    } catch (error) {
+      throw new Error(error.message || 'Error resetting password');
+    }
+  }
+
+  async changeAdminpassword(payload: ChangeAdminPasswordDto) {
+    try {
+      
+      const user = await this.userService.findExistingUserByPhoneNumber(payload.phoneNumber)
+      validatePassword(payload.newPassword, payload.confirmedPassword);
+
+      const hashedPassword = await hashPassword(payload.newPassword);
+      await this.userService.updatePassword(
+        hashedPassword,
+        user.phoneNumber,
+      );
+
+      return { message: 'Password changed successfully' };
     } catch (error) {
       throw new Error(error.message || 'Error resetting password');
     }
@@ -173,7 +190,7 @@ export class AuthService {
         userId: user.id,
       };
     } catch (error) {
-      throw error
+      throw error;
     }
   }
 }

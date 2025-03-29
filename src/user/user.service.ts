@@ -8,11 +8,12 @@ import {
 import { SignUpDto } from 'src/auth/dtos';
 import { UserStore } from 'src/data-stores/user/user.store';
 import { IUser } from 'src/interfaces/user/user.interface';
-import { AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
+import { AddAdminUser, AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
 import { User } from 'src/schemas/user/user.schema';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
 import { getPagination, hashPassword, validatePassword } from 'src/utils';
 import { AdStore } from 'src/data-stores/ad/ad.store';
+import { CommonQueryDto } from 'src/common/dtos';
 
 @Injectable()
 export class UserService {
@@ -39,9 +40,7 @@ export class UserService {
     return user;
   }
 
-  async findExistingUserByNumber(
-    phoneNumber: string,
-  ): Promise<IUser | null> {
+  async findExistingUserByNumber(phoneNumber: string): Promise<IUser | null> {
     const user =
       await this.userStore.findExistingUserByPhoneNumber(phoneNumber);
     if (user) {
@@ -247,6 +246,23 @@ export class UserService {
     }
   }
 
+  async getAdminList(query: CommonQueryDto) {
+    try {
+      const { page, limit } = query;
+      const { skip, limit: currentLimit } = getPagination({ page, limit });
+
+      const users = await this.userStore.getAdminList(query, skip, currentLimit);
+
+      if (!users) {
+        throw new NotFoundException('Users not found');
+      }
+
+      return users;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async addUserByAdmin(payload: AddUser) {
     try {
       this.findExistingUser(payload.email);
@@ -257,6 +273,21 @@ export class UserService {
       const hashedPassword = await hashPassword(payload.password);
       const userData = { ...payload, password: hashedPassword };
       return await this.userStore.addUserByAdmin(userData);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async addAdmin(payload: AddAdminUser) {
+    try {
+      this.findExistingUser(payload.email);
+      this.findExistingUserByNumber(payload.phoneNumber);
+
+      validatePassword(payload.password, payload.confirmPassword);
+
+      const hashedPassword = await hashPassword(payload.password);
+      const userData = { ...payload, password: hashedPassword };
+      return await this.userStore.addAdmin(userData);
     } catch (error) {
       throw error;
     }
@@ -276,7 +307,7 @@ export class UserService {
 
   async deleteUser(id: string): Promise<void> {
     await this.findUserById(id);
-     await this.adStore.deleteUserAds(id);
+    await this.adStore.deleteUserAds(id);
     return await this.userStore.deleteUserByAdmin(id);
   }
 
