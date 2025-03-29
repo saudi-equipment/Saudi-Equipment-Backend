@@ -21,7 +21,7 @@ export class User extends Document {
   @Prop({ required: true })
   phoneNumber: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   city: string;
 
   @Prop({ required: false, default: null })

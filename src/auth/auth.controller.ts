@@ -27,6 +27,7 @@ import { UserRole } from 'src/enums';
 import { GetUser } from 'src/decorators/user.decorator';
 import { Public } from 'src/decorators/public.routes.decorator';
 import { UserService } from 'src/user/user.service';
+import { ChangeAdminPasswordDto } from './dtos/change.admin.password.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -128,6 +129,25 @@ export class AuthController {
   ) {
     try {
       await this.authService.changePassword(user, payload);
+      return response.status(200).json({
+        message: 'Password updated successfully',
+      });
+    } catch (error) {
+      return response.status(error.status || 500).json({
+        message: error.message || 'Failed to change password',
+      });
+    }
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Put('password')
+  async changeAdminpassword(
+    @Res() response,
+    @Body() payload: ChangeAdminPasswordDto,
+  ) {
+    try {
+      await this.authService.changeAdminpassword(payload);
       return response.status(200).json({
         message: 'Password updated successfully',
       });

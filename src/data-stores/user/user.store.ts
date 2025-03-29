@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { SignUpDto } from 'src/auth/dtos';
+import { CommonQueryDto } from 'src/common/dtos';
 import { UserRole } from 'src/enums';
 import { IUser } from 'src/interfaces/user';
 import { User } from 'src/schemas/user/user.schema';
-import { AddUser, GetUserListQueryDto, UserUpdateDto } from 'src/user/dtos';
+import { AddAdminUser, AddUser, GetUserListQueryDto, UserUpdateDto } from 'src/user/dtos';
 
 @Injectable()
 export class UserStore {
@@ -38,18 +39,28 @@ export class UserStore {
       ...payload,
     });
     await newUser.save();
-    return this.userModel.findById(newUser._id).select('-password');
+    return this.userModel
+      .findById(newUser._id)
+      .select('-password')
   }
 
-  // async updateUserByAdmin(payload: UserUpdateDto, id: string):Promise<IUser | null>{
-  //  const updatedUser = await this.userModel.findOneAndUpdate(
-  //    {_id: new Types.ObjectId(id)},
-  //    {$set: {...payload}},
-  //    {new: true}
-  //  )
-  //  .select('-password');
-  //  return updatedUser
-  // }
+  async addAdmin(payload: AddAdminUser) {
+    const newUser = new this.userModel({
+      isEmailVerified: true,
+      isActive: true,
+      role: UserRole.ADMIN,
+      isPremiumUser: true,
+      isVerified: true,
+      ...payload,
+    });
+    await newUser.save();
+    return this.userModel
+      .findById(newUser._id)
+      .select('-password')
+      .select('-blockedUsers')
+      .select('-ads')
+      .select('-__v')
+  }
 
   async makeUserPremium(userId: string) {
     try {
@@ -200,14 +211,14 @@ export class UserStore {
       role: { $ne: UserRole.ADMIN },
     };
 
-      if (search) {
-        matchStage.$or = [
-          { name: { $regex: search, $options: 'i' } },
-          { phoneNumber: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } },
-          { city: { $regex: search, $options: 'i' } },
-        ];
-      }
+    if (search) {
+      matchStage.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { phoneNumber: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { city: { $regex: search, $options: 'i' } },
+      ];
+    }
 
     const sortStage: Record<string, any> = {};
 
@@ -352,5 +363,86 @@ export class UserStore {
       );
       return true;
     }
+  }
+
+  async getAdminList(
+    query: CommonQueryDto,
+    skip: number,
+    currentLimit: number,
+  ): Promise<{
+    admins: User[];
+    totalAdmins: number;
+  }> {
+    const { search, sortType, orderType } = query;
+
+    const matchStage: any = { 
+      role: UserRole.ADMIN, 
+      isDeleted: false 
+    };
+
+    if (search) {
+      matchStage.$or = [
+        { email: { $regex: search, $options: 'i' } },
+        { phoneNumber: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } }, 
+      ];
+    }
+
+    const sortStage: Record<string, any> = {};
+
+    if (sortType === 'Newest') {
+      sortStage.createdAt = -1;
+    } else if (sortType === 'Oldest') {
+      sortStage.createdAt = 1;
+    }
+
+    if (orderType === 'A-Z') {
+      sortStage.email = 1;
+    } else if (orderType === 'Z-A') {
+      sortStage.email = -1;
+    }
+
+    const aggregationPipeline = [
+      { $match: matchStage },
+      { $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 } },
+      {
+        $facet: {
+          adminList: [
+            { $skip: skip },
+            { $limit: currentLimit },
+            {
+              $project: {
+                name: 1,
+                phoneNumber: 1,
+                email: 1,
+                city: 1,
+                profilePicture: 1,
+                role: 1,
+                isVerified: 1,
+                isActive: 1,
+                isEmailVerified: 1,
+                isBlocked: 1,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            },
+          ],
+          totalCount: [{ $count: 'count' }],
+        },
+      },
+      {
+        $project: {
+          admins: '$adminList',
+          totalAdmins: { $arrayElemAt: ['$totalCount.count', 0] },
+        },
+      },
+    ];
+
+    const result = await this.userModel.aggregate(aggregationPipeline).exec();
+
+    return {
+      totalAdmins: result[0]?.totalAdmins || 0,
+      admins: result[0]?.admins || [],
+    };
   }
 }
