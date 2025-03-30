@@ -196,7 +196,9 @@ export class PaymentStore {
     const [adPayments, adCountResult, adAmountResult] = await Promise.all([
       this.adModel.aggregate([
         { $match: baseMatch },
-        { $sort: sortStage },
+        {
+          $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 },
+        },
         { $skip: skip },
         { $limit: currentLimit },
         {
@@ -245,7 +247,9 @@ export class PaymentStore {
     ] = await Promise.all([
       this.subscriptionModel.aggregate([
         { $match: baseMatch },
-        { $sort: sortStage },
+        {
+          $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 },
+        },
         { $skip: skip },
         { $limit: currentLimit },
         {
