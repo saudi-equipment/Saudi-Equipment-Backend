@@ -159,15 +159,14 @@ export class PaymentStore {
     currentLimit: number,
     query: CommonQueryDto,
   ): Promise<{
-    adPayments: any[];
-    subscriptionPayments: any[];
-    totalAdPayments: number;
-    totalSubscriptionPayments: number;
-    combinedTotal: number;
+    payments: any[];
+    adAmountTotal: number;
+    subscriptionAmountTotal: number;
+    totalAmount: number;
+    totalCount: number;
   }> {
     const { search, sortType, orderType } = query;
 
-    // Common match stage for both collections
     const baseMatch: any = {
       transactionId: { $exists: true, $ne: null },
     };
@@ -180,17 +179,24 @@ export class PaymentStore {
       ];
     }
 
-    // Sort configuration
-    const sortConfig: Record<string, 1 | -1> = this.getSortConfig(
-      sortType,
-      orderType,
-    );
+    const sortStage: Record<string, any> = {};
 
-    // Query Ads payments with count
-    const [adPayments, adCountResult] = await Promise.all([
+    if (sortType === 'Newest') {
+      sortStage.createdAt = -1;
+    } else if (sortType === 'Oldest') {
+      sortStage.createdAt = 1;
+    }
+
+    if (orderType === 'A-Z') {
+      sortStage['user.name'] = 1;
+    } else if (orderType === 'Z-A') {
+      sortStage['user.name'] = -1;
+    }
+
+    const [adPayments, adCountResult, adAmountResult] = await Promise.all([
       this.adModel.aggregate([
         { $match: baseMatch },
-        { $sort: sortConfig },
+        { $sort: sortStage },
         { $skip: skip },
         { $limit: currentLimit },
         {
@@ -209,26 +215,37 @@ export class PaymentStore {
             paymentCompany: 1,
             amount: '$price',
             currency: 1,
+            type: { $literal: 'ad promotion' },
+            adId: 1,
+            isPromoted: 1,
+            promotionPlan: 1,
+            promotionStartDate: 1,
+            promotionEndDate: 1,
+            duration: 1,
             createdAt: 1,
-            user: 1,
-            type: { $literal: 'ad' },
-            details: {
-              adId: '$_id',
-              titleEn: '$titleEn',
-              isPromoted: '$isPromoted',
-              promotionPlan: '$promotionPlan',
-            },
+            'user._id': 1,
+            'user.name': 1,
+            'user.phoneNumber': 1,
+            'user.email': 1,
+            'user.city': 1,
           },
         },
       ]),
       this.adModel.countDocuments(baseMatch),
+      this.adModel.aggregate([
+        { $match: baseMatch },
+        { $group: { _id: null, totalAmount: { $sum: '$price' } } },
+      ]),
     ]);
 
-    // Query Subscription payments with count
-    const [subscriptionPayments, subscriptionCountResult] = await Promise.all([
+    const [
+      subscriptionPayments,
+      subscriptionCountResult,
+      subscriptionAmountResult,
+    ] = await Promise.all([
       this.subscriptionModel.aggregate([
         { $match: baseMatch },
-        { $sort: sortConfig },
+        { $sort: sortStage },
         { $skip: skip },
         { $limit: currentLimit },
         {
@@ -249,41 +266,43 @@ export class PaymentStore {
             currency: 1,
             plan: '$plan',
             duration: '$duration',
+            startDate: 1,
+            endDate: 1,
             subscriptionStatus: '$subscriptionStatus',
             type: { $literal: 'subscription' },
             createdAt: 1,
             updatedAt: 1,
+            'user._id': 1,
             'user.name': 1,
+            'user.phoneNumber': 1,
+            'user.email': 1,
+            'user.city': 1,
           },
         },
       ]),
       this.subscriptionModel.countDocuments(baseMatch),
+      this.subscriptionModel.aggregate([
+        { $match: baseMatch },
+        { $group: { _id: null, totalAmount: { $sum: '$price' } } },
+      ]),
     ]);
 
-    return {
-      adPayments,
-      subscriptionPayments,
-      totalAdPayments: adCountResult,
-      totalSubscriptionPayments: subscriptionCountResult,
-      combinedTotal: adCountResult + subscriptionCountResult,
-    };
-  }
+    const adAmountTotal = adAmountResult[0]?.totalAmount || 0;
+    const subscriptionAmountTotal =
+      subscriptionAmountResult[0]?.totalAmount || 0;
 
-  private getSortConfig(
-    sortType: string,
-    orderType: string,
-  ): Record<string, 1 | -1> {
-    if (sortType === 'Oldest') {
-      return { createdAt: 1 };
-    }
-    if (orderType === 'A-Z') {
-      return { transactionId: 1 };
-    }
-    if (orderType === 'Z-A') {
-      return { transactionId: -1 };
-    }
-    // Default: newest first
-    return { createdAt: -1 };
+    const combinedPayments = [...adPayments, ...subscriptionPayments].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    return {
+      adAmountTotal,
+      subscriptionAmountTotal,
+      totalAmount: adAmountTotal + subscriptionAmountTotal,
+      totalCount: adCountResult + subscriptionCountResult,
+      payments: combinedPayments,
+    };
   }
 
   async expireUserSubscription(userId: string): Promise<void> {
