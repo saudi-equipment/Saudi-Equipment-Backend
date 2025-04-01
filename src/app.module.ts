@@ -14,6 +14,7 @@ import { AdminModule } from './admin/admin.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { MoyasarModule } from './moyasar/moyasar.module';
 import { BannerAdModule } from './google.ad/banner.ad.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { BannerAdModule } from './google.ad/banner.ad.module';
     NewsletterModule,
     MoyasarModule,
     BannerAdModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
