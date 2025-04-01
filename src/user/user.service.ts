@@ -266,7 +266,7 @@ export class UserService {
   async addUserByAdmin(payload: AddUser) {
     try {
       this.findExistingUser(payload.email);
-      this.findExistingUserByPhoneNumber(payload.phoneNumber);
+      this.findExistingUserByNumber(payload.phoneNumber);
 
       validatePassword(payload.password, payload.confirmPassword);
 

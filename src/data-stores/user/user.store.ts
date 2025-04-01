@@ -36,6 +36,7 @@ export class UserStore {
       isEmailVerified: payload.emailStatus,
       isActive: payload.phoneNumberStatus,
       isVerified: true,
+      isPremiumUser: payload.isPremiumUser,
       ...payload,
     });
     await newUser.save();

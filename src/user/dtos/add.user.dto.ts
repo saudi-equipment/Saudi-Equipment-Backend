@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class AddUser {
@@ -30,6 +31,18 @@ export class AddUser {
   @IsBoolean()
   @IsNotEmpty()
   readonly phoneNumberStatus: boolean;
+
+  @ApiProperty({ description: 'User status', type: Boolean })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  isPremiumUser: boolean;
+
+  @IsOptional()
+  startDate: Date;
+
+  @IsOptional()
+  endDate: Date;
 
   @ApiProperty({ description: 'The password of the user' })
   @IsString()
