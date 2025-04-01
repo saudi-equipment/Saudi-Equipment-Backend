@@ -10,4 +10,8 @@ export interface ISubscription {
   status?: 'active' | 'inactive';
   price: number;
   user?: User;
+  startDate: Date,
+  endDate: Date,
+  createdAt: string;
+  updatedAt: string;
 }
