@@ -1,6 +1,7 @@
 import {
   ConflictException,
   ForbiddenException,
+  HttpException,
   HttpStatus,
   Injectable,
   NotFoundException,
@@ -73,13 +74,13 @@ export class UserService {
     return existingEmail;
   }
 
-  async findExistingUser(email: string): Promise<IUser | null> {
-    const user = await this.userStore.findExistingUser(email);
-    if (user) {
-      throw new ConflictException('Email is already exist');
+    async findExistingUser(email: string): Promise<IUser | null> {
+      const user = await this.userStore.findExistingUser(email);
+      if (user) {
+        throw new ConflictException('Email is already exist');
+      }
+      return user;
     }
-    return user;
-  }
 
   async findUserById(id: string): Promise<IUser | null> {
     const user = await this.userStore.findById(id);
@@ -264,18 +265,12 @@ export class UserService {
   }
 
   async addUserByAdmin(payload: AddUser) {
-    try {
-      this.findExistingUser(payload.email);
-      this.findExistingUserByPhoneNumber(payload.phoneNumber);
-
+  
       validatePassword(payload.password, payload.confirmPassword);
 
       const hashedPassword = await hashPassword(payload.password);
       const userData = { ...payload, password: hashedPassword };
       return await this.userStore.addUserByAdmin(userData);
-    } catch (error) {
-      throw error;
-    }
   }
 
   async addAdmin(payload: AddAdminUser) {

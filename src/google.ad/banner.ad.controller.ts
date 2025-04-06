@@ -24,6 +24,7 @@ import { CreateBannerAdDto, UpdateBannerAdDto } from './dtos';
 import { User } from 'src/schemas/user/user.schema';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { CommonQueryDto } from 'src/common/dtos';
+import { Public } from 'src/decorators/public.routes.decorator';
 
 @Controller('bannerad')
 export class BannerAdController {
@@ -99,8 +100,8 @@ export class BannerAdController {
     }
   }
 
+  @Public()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
   @Get('list')
   async getAllBannerAds(@Query() query: CommonQueryDto) {
     return await this.bannerAdService.getAllBannerAds(query);

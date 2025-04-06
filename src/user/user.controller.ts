@@ -17,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UserService } from './user.service';
-import { AddAdminUser, AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
+import { AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
 import { RolesGuard } from 'src/auth/guard/roles.gurad';
 import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
@@ -26,7 +26,6 @@ import { User } from 'src/schemas/user/user.schema';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { Public } from 'src/decorators/public.routes.decorator';
-import { CommonQueryDto } from 'src/common/dtos';
 
 @Controller('user')
 export class UserController {
@@ -94,30 +93,6 @@ export class UserController {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @UseInterceptors(FileInterceptor('profilePicture'))
-  @Put('update-admin/:id')
-  async updateAdmin(
-    @Req() req: Request,
-    @Res() response,
-    @Param('id') id: string,
-    @UploadedFile() profilePicture: Express.Multer.File,
-    @Body() payload: UserUpdateDto,
-  ) {
-    try {
-      await this.expireAdsMiddleware.use(req, response, () => {});
-      const data = await this.userService.updateUser(
-        id,
-        payload,
-        profilePicture,
-      );
-      return response.status(HttpStatus.OK).json(data);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Patch('account/status')
   async activateOrDeactivateAccount(
@@ -143,27 +118,39 @@ export class UserController {
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  @Get('admin-list')
-  async getAdminList(@Query() query: CommonQueryDto) {
-    return await this.userService.getAdminList(query);
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
   @Post('add-user')
   async addUserByAdmin(@Body() payload: AddUser) {
+        this.userService.findExistingUser(payload.email);
+        this.userService.findExistingUserByNumber(payload.phoneNumber);
     return await this.userService.addUserByAdmin(payload);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @Post('add-admin')
-  async addAdmin(@Body() payload: AddAdminUser) {
-    return await this.userService.addAdmin(payload);
-  }
+  // @UseGuards(RolesGuard)
+  // @Roles(UserRole.ADMIN)
+  // @Post('add-user')
+  // async addUserByAdmin(
+  //   @Body() payload: AddUser,
+  //   @Req() req: Request,
+  //   @Res() response,
+  // ) {
+  //   try {
+  //     await this.userService.findExistingUser(payload.email);
+  //     await this.userService.findExistingUserByNumber(payload.phoneNumber);
+  //     const result = await this.userService.addUserByAdmin(payload);
+  //     return response.status(HttpStatus.CREATED).json({
+  //       message: 'User created successfully',
+  //       ...result,
+  //     });
+  //   } catch (error) {
+  //     return response
+  //       .status(error.status || HttpStatus.BAD_REQUEST)
+  //       .json({
+  //         message: error.response?.message,
+  //         error: error.response?.error,
+  //       });
+  //   }
+  // }
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.USER)
   @Post('block/:userId')
   async toggleBlockUser(
     @Param('userId') userId: string,

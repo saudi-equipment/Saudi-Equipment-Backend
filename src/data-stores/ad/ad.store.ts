@@ -88,7 +88,8 @@ export class AdStore {
     if (!existingAd) {
       throw new Error('Ad not found or unauthorized');
     }
-
+    existingAd.isActive = false,
+    existingAd.isPromoted = false,
     existingAd.isSold = true;
     existingAd.soldDate = new Date();
 

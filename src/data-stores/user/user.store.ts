@@ -32,16 +32,16 @@ export class UserStore {
   }
 
   async addUserByAdmin(payload: AddUser) {
-    const newUser = new this.userModel({
-      isEmailVerified: payload.emailStatus,
-      isActive: payload.phoneNumberStatus,
-      isVerified: true,
-      ...payload,
-    });
-    await newUser.save();
-    return this.userModel
-      .findById(newUser._id)
-      .select('-password')
+
+      const newUser = new this.userModel({
+        isEmailVerified: payload.emailStatus,
+        isActive: payload.phoneNumberStatus,
+        isVerified: true,
+        isPremiumUser: payload.isPremiumUser,
+        ...payload,
+      });
+      await newUser.save();
+      return this.userModel.findById(newUser._id).select('-password');
   }
 
   async addAdmin(payload: AddAdminUser) {
@@ -59,7 +59,7 @@ export class UserStore {
       .select('-password')
       .select('-blockedUsers')
       .select('-ads')
-      .select('-__v')
+      .select('-__v');
   }
 
   async makeUserPremium(userId: string) {
@@ -375,16 +375,16 @@ export class UserStore {
   }> {
     const { search, sortType, orderType } = query;
 
-    const matchStage: any = { 
-      role: UserRole.ADMIN, 
-      isDeleted: false 
+    const matchStage: any = {
+      role: UserRole.ADMIN,
+      isDeleted: false,
     };
 
     if (search) {
       matchStage.$or = [
         { email: { $regex: search, $options: 'i' } },
         { phoneNumber: { $regex: search, $options: 'i' } },
-        { name: { $regex: search, $options: 'i' } }, 
+        { name: { $regex: search, $options: 'i' } },
       ];
     }
 
