@@ -7,8 +7,8 @@ export class BannerAd extends Document {
   @Prop({ required: true })
   bannerAdName: string;
 
-  @Prop({ type: [String], required: true })
-  bannerImages: string[];
+  @Prop({ type: String, required: true })
+  bannerImage: string;
 
   @Prop({ required: true })
   bannerAdLink: string;
