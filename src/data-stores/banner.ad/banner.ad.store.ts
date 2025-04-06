@@ -16,13 +16,13 @@ export class BannerStore {
     user: User,
     payload: CreateBannerAdDto,
     bannerAdId: string,
-    uploadedUrls: string[],
+    uploadedUrl: string,
   ): Promise<IBannerAd> {
     const newBannerAd = new this.bannerAdModel({
       createdBy: user.id,
       bannerAdId,
       ...payload,
-      bannerImages: uploadedUrls,
+      bannerImage: uploadedUrl,
       user: user._id,
     });
 
@@ -37,15 +37,15 @@ export class BannerStore {
   async updateBannerAd(
     id: string,
     payload: UpdateBannerAdDto,
-    bannerImages?: string[],
+    newBannerImageUrl?: string,
   ): Promise<IBannerAd> {
     try {
       const updateData: any = {
         ...payload,
       };
 
-      if (bannerImages) {
-        updateData.bannerImages = bannerImages;
+      if (newBannerImageUrl) {
+        updateData.bannerImage = newBannerImageUrl;
       }
 
       const updatedBanner = await this.bannerAdModel
@@ -104,11 +104,11 @@ export class BannerStore {
             {
               $project: {
                 bannerAdName: 1,
-                bannerImages: 1,
+                bannerImage: 1,
                 bannerAdLink: 1,
                 bannerAdId: 1,
                 createdBy: 1,
-                createdAt: 1
+                createdAt: 1,
               },
             },
           ],

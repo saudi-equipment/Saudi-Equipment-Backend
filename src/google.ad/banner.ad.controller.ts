@@ -11,6 +11,7 @@ import {
   Query,
   Req,
   Res,
+  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -22,7 +23,7 @@ import { GetUser } from 'src/decorators/user.decorator';
 import { BannerAdService } from './banner.ad.service';
 import { CreateBannerAdDto, UpdateBannerAdDto } from './dtos';
 import { User } from 'src/schemas/user/user.schema';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { CommonQueryDto } from 'src/common/dtos';
 import { Public } from 'src/decorators/public.routes.decorator';
 
@@ -33,21 +34,21 @@ export class BannerAdController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Post('create')
-  @UseInterceptors(FilesInterceptor('files', 10))
+  @UseInterceptors(FileInterceptor('file'))
   async createBannerAd(
     @GetUser() user: User,
     @Body() payload: CreateBannerAdDto,
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFile() file: Express.Multer.File,
   ) {
     try {
-      if (files && files.length === 0) {
-        throw new BadRequestException('Select at least one file');
-      }
+       if (!file) {
+         throw new BadRequestException('Select a file');
+       }
 
       const data = await this.bannerAdService.createBannerAd(
         user,
         payload,
-        files,
+        file,
       );
 
       return data;
@@ -59,17 +60,17 @@ export class BannerAdController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Put(':id')
-  @UseInterceptors(FilesInterceptor('files', 10))
+  @UseInterceptors(FileInterceptor('file'))
   async updateBannerAd(
     @Param('id') id: string,
     @Body() payload: UpdateBannerAdDto,
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFile() file?: Express.Multer.File,
   ) {
     try {
       const data = await this.bannerAdService.updateBannerAd(
         id,
         payload,
-        files,
+        file,
       );
       return data;
     } catch (error) {

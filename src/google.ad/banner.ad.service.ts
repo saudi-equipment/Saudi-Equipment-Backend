@@ -17,20 +17,17 @@ export class BannerAdService {
   async createBannerAd(
     user: User,
     payload: CreateBannerAdDto,
-    files: Express.Multer.File[],
+    file: Express.Multer.File,
   ) {
     try {
       const bannerAdId = generateAdId();
-
-      const uploadedUrls = await Promise.all(
-        files.map((file) => this.digitalOceanService.uploadFileToSpaces(file)),
-      );
+      const uploadedUrl = await this.digitalOceanService.uploadFileToSpaces(file); 
 
       const data = await this.bannerAdStore.createBannerAd(
         user,
         payload,
         bannerAdId,
-        uploadedUrls,
+        uploadedUrl,
       );
       return data;
     } catch (error) {
@@ -41,52 +38,42 @@ export class BannerAdService {
   async updateBannerAd(
     id: string,
     payload: UpdateBannerAdDto,
-    files?: Express.Multer.File[],
+    file?: Express.Multer.File,
   ): Promise<IBannerAd> {
     try {
       const existingBanner = await this.bannerAdStore.getBannerAdById(id);
+      if (!existingBanner) throw new NotFoundException('Bannar ad not found');
 
-      if (!existingBanner) {
-        throw new NotFoundException('Banner ad not found');
-      }
+      let newBannerImageUrl = existingBanner.bannerImage || null;
 
-      // Handle existing images
-      let existingImages = existingBanner.bannerImages || [];
-      const remainingImages = payload.imageUrls || [];
-
-      // Delete images that were removed
-      if (remainingImages.length === 0 && existingImages.length > 0) {
-        await this.digitalOceanService.deleteFilesFromSpaces(existingImages);
-      } else {
-        const imagesToDelete = existingImages.filter(
-          (image) => !remainingImages.includes(image),
-        );
-        if (imagesToDelete.length > 0) {
-          await this.digitalOceanService.deleteFilesFromSpaces(imagesToDelete);
+      if (file) {
+        if (existingBanner.bannerImage) {
+          await this.digitalOceanService.deleteFilesFromSpaces(
+            existingBanner.bannerImage,
+          );
         }
+
+        newBannerImageUrl =
+          await this.digitalOceanService.uploadFileToSpaces(file);
       }
 
-      // Upload new files
-      const newUploadedUrls =
-        files && files.length > 0
-          ? await Promise.all(
-              files.map((file) =>
-                this.digitalOceanService.uploadFileToSpaces(file),
-              ),
-            )
-          : [];
+      if (!file && !payload.imageUrl && existingBanner.bannerImage) {
+        await this.digitalOceanService.deleteFilesFromSpaces(
+          existingBanner.bannerImage,
+        );
+        newBannerImageUrl = null;
+      }
 
-      // Combine kept and new images
-      const updatedImages = [...remainingImages, ...newUploadedUrls];
+      if (newBannerImageUrl) payload.imageUrl = newBannerImageUrl;
 
-      return await this.bannerAdStore.updateBannerAd(
+      const updatedBannerAd = await this.bannerAdStore.updateBannerAd(
         id,
         payload,
-        updatedImages,
+        newBannerImageUrl,
       );
+      return updatedBannerAd;
     } catch (error) {
-      console.error('Error updating banner ad:', error);
-      throw new Error(`Failed to update banner ad: ${error.message}`);
+      throw error;
     }
   }
 

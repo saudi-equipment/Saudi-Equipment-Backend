@@ -6,7 +6,7 @@ import {
   IsUrl,
   IsArray,
 } from 'class-validator';
-export class UpdateBannerAdDto {
+export class  UpdateBannerAdDto {
   @IsOptional()
   @IsString()
   bannerAdName?: string;
@@ -16,9 +16,6 @@ export class UpdateBannerAdDto {
   bannerAdLink?: string;
 
   @IsOptional()
-  @IsArray()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
-  )
-  imageUrls?: string[];
+  @IsString()
+  imageUrl: string;
 }
