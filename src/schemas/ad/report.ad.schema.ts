@@ -14,6 +14,9 @@ export class ReportAd extends Document {
   @Prop({ required: true })
   message: string;
 
+  @Prop({ required: true })
+  adId: string;
+
   @Prop({ type: Types.ObjectId, ref: 'Ad', required: false })
   ad: Ad;
 

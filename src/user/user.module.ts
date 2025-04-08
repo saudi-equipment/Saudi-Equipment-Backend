@@ -11,6 +11,8 @@ import { adsSchema } from 'src/schemas/ad/ad.schema';
 import { PaymentModule } from 'src/payment/payment.module';
 import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
 import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
+import { subscriptionSchema } from 'src/schemas/subscription/subscription.schema';
+import { SubscriptionsModule } from 'src/admin/subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -19,11 +21,16 @@ import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
     forwardRef(() => NotificationModule),
     forwardRef(() => AuthModule),
     forwardRef(() => AdModule),
+    forwardRef(() => SubscriptionsModule),
     forwardRef(() => DigitalOceanModule),
-    MongooseModule.forFeature([{ name: 'User', schema: userSchema }, { name: 'Ad', schema: adsSchema }, ]),
+    MongooseModule.forFeature([
+      { name: 'User', schema: userSchema },
+      { name: 'Ad', schema: adsSchema },
+      { name: 'Subscription', schema: subscriptionSchema },
+    ]),
   ],
   providers: [UserService, UserStore, ExpireAdsMiddleware],
   controllers: [UserController],
-  exports: [UserService, UserStore]
+  exports: [UserService, UserStore],
 })
 export class UserModule {}

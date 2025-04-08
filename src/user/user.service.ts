@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   HttpException,
@@ -312,8 +313,8 @@ export class UserService {
     const user = await this.findExistingUserByPhoneNumber(phoneNumber);
 
     if (user.isBlocked == true || user.isActive == false) {
-      throw new ForbiddenException(
-        'Your account is blocked. Please contact saudi-equipment support team to activate your account',
+      throw new BadRequestException(
+        'Your account is blocked by admin. Please contact saudi-equipment support team to activate your account',
       );
     }
     return user;

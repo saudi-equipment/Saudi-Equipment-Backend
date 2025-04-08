@@ -73,8 +73,10 @@ export class UpdateAdDto {
   isFeatued: boolean;
 
   @IsOptional()
-  promotionStartDate: Date
-  
+  @ApiProperty({ description: 'Start Date of the promoted Ad' })
+  startDate: Date;
+
   @IsOptional()
-  promotionEndDate: Date
+  @ApiProperty({ description: 'End Date of the promoted Ad' })
+  endDate: Date;
 }

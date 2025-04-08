@@ -29,6 +29,8 @@ export class AdStore {
       createdBy: user.id,
       adId: adId,
       isPromoted: payload.isFeatured,
+      promotionStartDate: payload.startDate,
+      promotionEndDate: payload.endDate,
       ...payload,
       images: uploadedUrls,
       user: user._id,
@@ -65,6 +67,8 @@ export class AdStore {
         {
           $set: {
             isPromoted: payload.isFeatued,
+            promotionStartDate: payload.startDate,
+            promotionEndDate: payload.endDate,
             ...payload,
             images: uploadedUrls || null,
           },

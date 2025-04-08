@@ -13,12 +13,12 @@ export class CreateAdDto {
   @IsString()
   fuelType: string;
 
-  @ApiProperty({ description: 'Condition of the item'})
+  @ApiProperty({ description: 'Condition of the item' })
   @IsNotEmpty()
   @IsString()
   condition: string;
 
-  @ApiProperty({ description: 'Title in Arabic'})
+  @ApiProperty({ description: 'Title in Arabic' })
   @IsNotEmpty()
   @IsString()
   titleAr: string;
@@ -43,17 +43,17 @@ export class CreateAdDto {
   @IsString()
   currency: string;
 
-  @ApiProperty({ description: 'Year of manufacture or release'})
+  @ApiProperty({ description: 'Year of manufacture or release' })
   @IsNotEmpty()
   @IsString()
   year: string;
 
-  @ApiProperty({ description: 'City where the ad is relevant'})
+  @ApiProperty({ description: 'City where the ad is relevant' })
   @IsNotEmpty()
   @IsString()
   city: string;
 
-  @ApiProperty({ description: 'YouTube link for the ad'})
+  @ApiProperty({ description: 'YouTube link for the ad' })
   @IsOptional()
   @IsUrl()
   youTubeLink?: string;
@@ -63,4 +63,12 @@ export class CreateAdDto {
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   isFeatured: boolean;
+
+  @IsOptional()
+  @ApiProperty({ description: 'Start Date of the promoted Ad' })
+  startDate: Date;
+
+  @IsOptional()
+  @ApiProperty({ description: 'End Date of the promoted Ad' })
+  endDate: Date;
 }

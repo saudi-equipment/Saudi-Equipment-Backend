@@ -4,13 +4,24 @@ import { Model, Types } from 'mongoose';
 import { SignUpDto } from 'src/auth/dtos';
 import { CommonQueryDto } from 'src/common/dtos';
 import { UserRole } from 'src/enums';
+import { ISubscription } from 'src/interfaces/payment/subscription.interface';
 import { IUser } from 'src/interfaces/user';
 import { User } from 'src/schemas/user/user.schema';
-import { AddAdminUser, AddUser, GetUserListQueryDto, UserUpdateDto } from 'src/user/dtos';
+import {
+  AddAdminUser,
+  AddUser,
+  GetUserListQueryDto,
+  UserUpdateDto,
+} from 'src/user/dtos';
+import { generateTransactionId } from 'src/utils/generate.transaction.id.helper';
 
 @Injectable()
 export class UserStore {
-  constructor(@InjectModel('User') private userModel: Model<IUser>) {}
+  constructor(
+    @InjectModel('User') private userModel: Model<IUser>,
+    @InjectModel('Subscription')
+    private subscriptionModel: Model<ISubscription>,
+  ) {}
 
   async findExistingUser(email: string): Promise<IUser | null> {
     return this.userModel.findOne({ email }).exec();
@@ -31,17 +42,44 @@ export class UserStore {
     return await newUser.save();
   }
 
-  async addUserByAdmin(payload: AddUser) {
+  async addUserByAdmin(payload: AddUser): Promise<IUser> {
+    const newUser = new this.userModel({
+      isEmailVerified: payload.emailStatus,
+      isActive: payload.phoneNumberStatus,
+      isVerified: true,
+      isPremiumUser: payload.isPremiumUser,
+      ...payload,
+    });
 
-      const newUser = new this.userModel({
-        isEmailVerified: payload.emailStatus,
-        isActive: payload.phoneNumberStatus,
-        isVerified: true,
-        isPremiumUser: payload.isPremiumUser,
-        ...payload,
+    await newUser.save();
+
+    if (payload.isPremiumUser) {
+      const newSubscription = new this.subscriptionModel({
+        transactionId: generateTransactionId(),
+        user: newUser._id,
+        subscriptionStatus: 'active',
+        startDate: payload.startDate || new Date(),
+        endDate: payload.endDate,
+        subscribedBy: newUser._id,
+        createdBy: newUser._id,
+        plan: payload.plan,
+        duration: payload.duration,
+        price: payload.price,
+        paymentType: payload.paymentType,
+        paymentCompany: payload.paymentCompany,
       });
+
+      await newSubscription.save();
+
+      newUser.subscription = newSubscription.id;
       await newUser.save();
-      return this.userModel.findById(newUser._id).select('-password');
+    }
+
+    return this.userModel
+      .findById(newUser._id)
+      .select('-password')
+      .select('-__v')
+      .populate('subscription');
   }
 
   async addAdmin(payload: AddAdminUser) {
@@ -130,18 +168,74 @@ export class UserStore {
     payload: UserUpdateDto,
     updatedProfilePic?: string,
   ): Promise<IUser | null> {
-    try {
-      const updatedUser = await this.userModel
-        .findOneAndUpdate(
-          { _id: userId },
-          { $set: { ...payload, profilePicture: updatedProfilePic } },
-          { new: true },
-        )
-        .select('-password');
-      return updatedUser;
-    } catch (error) {
-      throw error;
+    const existingUser = await this.userModel
+      .findById(userId)
+      .populate('subscription');
+    if (!existingUser) {
+      throw new Error('User not found');
     }
+
+    const updatedUser = await this.userModel
+      .findOneAndUpdate(
+        { _id: userId },
+        {
+          $set: {
+            ...payload,
+            profilePicture: updatedProfilePic,
+            isPremiumUser: payload.isPremiumUser,
+          },
+        },
+        { new: true },
+      )
+      .select('-password');
+
+    if (payload.isPremiumUser) {
+      const subscriptionData = {
+        ...(payload.startDate && { startDate: payload.startDate }),
+        ...(payload.endDate && { endDate: payload.endDate }),
+        ...(payload.plan && { plan: payload.plan }),
+        ...(payload.duration && { duration: payload.duration }),
+        ...(payload.price && { price: payload.price }),
+        ...(payload.paymentType && { paymentType: payload.paymentType }),
+        ...(payload.paymentCompany && {
+          paymentCompany: payload.paymentCompany,
+        }),
+        subscriptionStatus: 'active',
+      };
+
+      if (existingUser.subscription) {
+        await this.subscriptionModel.findByIdAndUpdate(
+          existingUser.subscription._id,
+          { $set: subscriptionData },
+          { new: true },
+        );
+      } else {
+        const newSubscription = new this.subscriptionModel({
+          transactionId: generateTransactionId(),
+          user: userId,
+          startDate: payload.startDate || new Date(),
+          endDate: payload.endDate,
+          plan: payload.plan,
+          duration: payload.duration,
+          price: payload.price,
+          paymentType: payload.paymentType,
+          paymentCompany: payload.paymentCompany,
+          subscriptionStatus: 'active',
+          subscribedBy: userId,
+          createdBy: userId,
+        });
+
+        await newSubscription.save();
+        updatedUser.subscription = newSubscription.id;
+        await updatedUser.save();
+      }
+    }
+
+    // Return the updated user with populated subscription in all cases
+    return this.userModel
+      .findById(updatedUser._id)
+      .select('-password')
+      .populate('subscription');
   }
 
   async activateOrDeactivateAccount(user: User): Promise<IUser | null> {

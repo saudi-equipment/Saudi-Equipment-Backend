@@ -39,10 +39,37 @@ export class AddUser {
   isPremiumUser: boolean;
 
   @IsOptional()
+  @ApiProperty({ description: 'Start Date of the sub scription' })
   startDate: Date;
 
   @IsOptional()
+  @ApiProperty({ description: 'End Date of the sub scription' })
   endDate: Date;
+
+  @ApiProperty({ description: 'The plan of the prmium user' })
+  @IsString()
+  @IsOptional()
+  readonly plan: string;
+
+  @ApiProperty({ description: 'The duration of the plan' })
+  @IsString()
+  @IsOptional()
+  readonly duration: string;
+
+  @ApiProperty({ description: 'The price of the plan' })
+  @IsString()
+  @IsOptional()
+  readonly price: string;
+
+  @ApiProperty({ description: 'The payment type of the plan' })
+  @IsString()
+  @IsOptional()
+  readonly paymentType: string;
+
+  @ApiProperty({ description: 'The paymentCompany of the plan' })
+  @IsString()
+  @IsOptional()
+  readonly paymentCompany: string;
 
   @ApiProperty({ description: 'The password of the user' })
   @IsString()
