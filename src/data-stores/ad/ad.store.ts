@@ -92,9 +92,9 @@ export class AdStore {
     if (!existingAd) {
       throw new Error('Ad not found or unauthorized');
     }
-    existingAd.isActive = false,
-    existingAd.isPromoted = false,
-    existingAd.isSold = true;
+    (existingAd.isActive = false),
+      (existingAd.isPromoted = false),
+      (existingAd.isSold = true);
     existingAd.soldDate = new Date();
 
     await existingAd.save();
@@ -256,7 +256,6 @@ export class AdStore {
                 'user._id': 1,
                 'user.name': 1,
                 'user.email': 1,
-                
               },
             },
           ],
@@ -288,21 +287,14 @@ export class AdStore {
   ) {
     const { search, sortType, adStatus, orderType, isPromoted } = query;
 
-    const filters: any = { isActive: { $in: [true, false] } };
-
-    if (search) {
-      filters.$or = [
-        { titleEn: { $regex: search, $options: 'i' } },
-        { titleAr: { $regex: search, $options: 'i' } },
-      ];
-    }
+    const baseFilters: any = { isActive: { $in: [true, false] } };
 
     if (adStatus !== undefined) {
-      filters.isActive = adStatus === 'true';
+      baseFilters.isActive = adStatus === 'true';
     }
 
     if (isPromoted) {
-      filters.isPromoted = true;
+      baseFilters.isPromoted = true;
     }
 
     const sortStage: Record<string, any> = {};
@@ -320,7 +312,40 @@ export class AdStore {
     }
 
     const result = await this.adModel.aggregate([
-      { $match: filters },
+      { $match: baseFilters },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'userDetails',
+        },
+      },
+      {
+        $unwind: {
+          path: '$userDetails',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      ...(search
+        ? [
+            {
+              $match: {
+                $or: [
+                  { titleEn: { $regex: search, $options: 'i' } },
+                  { titleAr: { $regex: search, $options: 'i' } },
+                  { 'userDetails.email': { $regex: search, $options: 'i' } },
+                  {
+                    'userDetails.phoneNumber': {
+                      $regex: search,
+                      $options: 'i',
+                    },
+                  },
+                ],
+              },
+            },
+          ]
+        : []),
       {
         $facet: {
           totalAds: [{ $count: 'count' }],
@@ -335,6 +360,38 @@ export class AdStore {
             },
             { $skip: skip },
             { $limit: limit },
+            {
+              $project: {
+                category: 1,
+                fuelType: 1,
+                condition: 1,
+                titleAr: 1,
+                titleEn: 1,
+                description: 1,
+                price: 1,
+                currency: 1,
+                year: 1,
+                city: 1,
+                adId: 1,
+                isActive: 1,
+                isPromoted: 1,
+                promotionPlan: 1,
+                promotionStartDate: 1,
+                promotionEndDate: 1,
+                isSold: 1,
+                soldDate: 1,
+                views: 1,
+                images: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                userDetails: {
+                  _id: 1,
+                  name: 1,
+                  email: 1,
+                  phoneNumber: 1,
+                },
+              },
+            },
           ],
         },
       },
@@ -611,13 +668,13 @@ export class AdStore {
         ...payload,
       });
 
-      await reportedAd.save()
-      return reportedAd
+      await reportedAd.save();
+      return reportedAd;
     } catch (error) {
       throw error;
     }
   }
- 
+
   async expireUserAds(userId: string) {
     try {
       const currentDate = new Date();

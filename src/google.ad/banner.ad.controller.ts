@@ -44,7 +44,8 @@ export class BannerAdController {
        if (!file) {
          throw new BadRequestException('Select a file');
        }
-
+      console.log("Payload", payload)
+      console.log("Payload", file)
       const data = await this.bannerAdService.createBannerAd(
         user,
         payload,
