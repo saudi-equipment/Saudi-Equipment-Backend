@@ -100,4 +100,14 @@ export class UserUpdateDto {
   @IsString()
   @IsOptional()
   readonly subscriptionId: string;
+
+  @ApiProperty({ description: 'The status of the email' })
+    @IsBoolean()
+    @IsOptional()
+    readonly emailStatus: boolean;
+  
+    @ApiProperty({ description: 'The status of the phoneNumber' })
+    @IsBoolean()
+    @IsOptional()
+    readonly phoneNumberStatus: boolean;
 }
