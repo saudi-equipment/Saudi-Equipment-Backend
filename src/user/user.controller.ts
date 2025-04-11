@@ -120,8 +120,8 @@ export class UserController {
   @Roles(UserRole.ADMIN)
   @Post('add-user')
   async addUserByAdmin(@Body() payload: AddUser) {
-        this.userService.findExistingUser(payload.email);
-        this.userService.findExistingUserByNumber(payload.phoneNumber);
+    this.userService.findExistingUser(payload.email);
+    this.userService.findExistingUserByNumber(payload.phoneNumber);
     return await this.userService.addUserByAdmin(payload);
   }
 
@@ -212,6 +212,17 @@ export class UserController {
   async getUserWithAd(@Res() response, @Param('id') id: string) {
     try {
       const data = await this.userService.getUserWithAd(id);
+      return response.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Public()
+  @Get('getUser/:id')
+  async getUserById(@Res() response, @Param('id') id: string) {
+    try {
+      const data = await this.userService.getUserById(id);
       return response.status(HttpStatus.OK).json(data);
     } catch (error) {
       throw error;

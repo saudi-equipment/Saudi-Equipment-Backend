@@ -181,7 +181,8 @@ export class UserStore {
         {
           $set: {
             ...payload,
-            profilePicture: updatedProfilePic,
+            isEmailVerified: payload.emailStatus,
+            isActive: payload.phoneNumberStatus,
             isPremiumUser: payload.isPremiumUser,
           },
         },
@@ -231,7 +232,6 @@ export class UserStore {
       }
     }
 
-    // Return the updated user with populated subscription in all cases
     return this.userModel
       .findById(updatedUser._id)
       .select('-password')
@@ -340,7 +340,6 @@ export class UserStore {
               $project: {
                 password: 0,
                 ads: 0,
-                subscriptions: 0,
                 blockedUsers: 0,
               },
             },
