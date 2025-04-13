@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class CreateAdDto {
   @ApiProperty({ description: 'Category of the ad' })
@@ -71,4 +71,24 @@ export class CreateAdDto {
   @IsOptional()
   @ApiProperty({ description: 'End Date of the promoted Ad' })
   endDate: Date;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Promotion Price' })
+  promotionPrice: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Promotion plan' })
+  promotionPlan: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Promotion plan' })
+  paymentCompany: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty({ description: 'Duration of plan' })
+  duration: string;
 }
