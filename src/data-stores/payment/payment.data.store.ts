@@ -168,7 +168,7 @@ export class PaymentStore {
     const { search, sortType, orderType } = query;
 
     const baseMatch: any = {
-      transactionId: { $exists: true, $ne: null },
+      // transactionId: { $exists: true, $ne: null },
     };
 
     if (search) {

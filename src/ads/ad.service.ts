@@ -79,6 +79,7 @@ export class AdService {
     files?: Express.Multer.File[],
   ): Promise<IAd> {
     try {
+      console.log("File", files)
       const existingAd = await this.adStore.getAdById(id);
 
       if (!existingAd) {

@@ -129,6 +129,7 @@ export class AdController {
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     try {
+  
       await this.expireAdsMiddleware.use(req, response, () => {});
       const data = await this.adService.updateAd(id, user, payload, files);
 

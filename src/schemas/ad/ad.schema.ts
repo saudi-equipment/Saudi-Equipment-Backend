@@ -27,6 +27,9 @@ export class Ad extends Document {
   @Prop({ required: true })
   price: string;
 
+  @Prop({ required: false })
+  promotionPrice: string;
+
   @Prop({ required: true })
   currency: string;
 
@@ -69,7 +72,7 @@ export class Ad extends Document {
   @Prop({ required: true, default: false })
   isRenew: boolean;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   youTubeLink: string;
 
   @Prop({ required: false, default: false })
