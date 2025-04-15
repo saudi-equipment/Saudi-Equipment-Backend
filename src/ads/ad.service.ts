@@ -79,7 +79,7 @@ export class AdService {
     files?: Express.Multer.File[],
   ): Promise<IAd> {
     try {
-      console.log("File", files)
+      console.log('File', files);
       const existingAd = await this.adStore.getAdById(id);
 
       if (!existingAd) {
@@ -142,13 +142,16 @@ export class AdService {
     payload: ReportAdDto,
   ): Promise<IReportAd> {
     try {
-      const ad = await this.adStore.getAdById(adId);
+      const findExistingAdByReportedAdId =
+        await this.adStore.findExistingAdByReportedAdId(payload.adId);
 
-      if (!ad) {
-        throw new NotFoundException('Ad not found');
+      if (!findExistingAdByReportedAdId) {
+        throw new NotFoundException(
+          'Ad not found, Please send the adId eg: 91405913',
+        );
       }
 
-      if (ad.createdBy.toString() === userId) {
+      if (findExistingAdByReportedAdId.createdBy.toString() === userId) {
         throw new ForbiddenException('You cannot report your own ad');
       }
 
