@@ -259,9 +259,9 @@ export class AdStore {
                 reportedBy: 1,
                 reportType: 1,
                 adId: 1,
-                ad: 1,
+                createdAt: 1, 
+                updatedAt: 1,
                 message: 1,
-                createdAt: 1,
                 'user._id': 1,
                 'user.name': 1,
                 'user.email': 1,
@@ -663,6 +663,12 @@ export class AdStore {
   async deleteUserAds(id: string) {
     return await this.adModel.deleteMany({ createdBy: id });
   }
+
+  async findExistingAdByReportedAdId(adId: string){
+    return await this.adModel.findOne({
+      adId: adId
+    })
+  };
 
   async reportAd(
     adId: string,

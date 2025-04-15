@@ -3,7 +3,7 @@ import { Types, Document } from 'mongoose';
 import { User } from '../user/user.schema';
 import { Ad } from './ad.schema';
 
-@Schema()
+@Schema({timestamps: true})
 export class ReportAd extends Document {
   @Prop({ required: true })
   reportedBy: string;
