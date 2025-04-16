@@ -32,6 +32,7 @@ import { Roles } from 'src/decorators/roles.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { Public } from 'src/decorators/public.routes.decorator';
+import { validateAdImagesSize } from 'src/utils';
 
 @Controller('ad')
 export class AdController {
@@ -73,7 +74,7 @@ export class AdController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Post('create-ad')
-  @UseInterceptors(FilesInterceptor('files', 10))
+  @UseInterceptors(FilesInterceptor('files', 5))
   async createAds(
     @Req() req: Request,
     @Res() response,
@@ -83,9 +84,16 @@ export class AdController {
   ) {
     try {
       await this.expireAdsMiddleware.use(req, response, () => {});
-      if (files && files.length === 0) {
-        throw new BadRequestException('Select alteast one file');
-      }
+      
+       if (!files || files.length === 0) {
+         throw new BadRequestException('Select at least one file');
+       }
+
+       if (files.length > 5) {
+         throw new BadRequestException('Select only 5 files');
+       }
+
+      validateAdImagesSize(files)
       const data = await this.adService.createAd(user, payload, files);
       return response
         .status(HttpStatus.CREATED)
