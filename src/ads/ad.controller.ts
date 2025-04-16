@@ -89,7 +89,7 @@ export class AdController {
          throw new BadRequestException('Select at least one file');
        }
 
-       if (files.length > 2) {
+       if (files.length > 5) {
          throw new BadRequestException('Select only 5 files');
        }
 
