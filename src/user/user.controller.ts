@@ -26,6 +26,7 @@ import { User } from 'src/schemas/user/user.schema';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { Public } from 'src/decorators/public.routes.decorator';
+import { validateProfilePicSize } from 'src/utils';
 
 @Controller('user')
 export class UserController {
@@ -47,6 +48,8 @@ export class UserController {
   ) {
     try {
       await this.expireAdsMiddleware.use(req, response, () => {});
+
+      validateProfilePicSize(profilePicture)
       const data = await this.userService.updateUser(
         userId,
         payload,
