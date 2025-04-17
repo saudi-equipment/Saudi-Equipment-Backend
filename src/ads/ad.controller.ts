@@ -135,6 +135,8 @@ export class AdController {
       try {
     
         await this.expireAdsMiddleware.use(req, response, () => {});
+
+        validateAdImagesSize(files);
         const data = await this.adService.updateAd(id, user, payload, files);
 
         if (!data) {
