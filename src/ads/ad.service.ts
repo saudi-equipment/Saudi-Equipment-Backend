@@ -136,6 +136,14 @@ export class AdService {
     }
   }
 
+  async deleteManyAds(ids: string[]) {
+    try {
+      return await this.adStore.deleteManyAds(ids);
+    } catch (error) {
+      error;
+    }
+  }
+
   async reportAd(
     adId: string,
     userId: string,
