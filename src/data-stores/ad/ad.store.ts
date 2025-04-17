@@ -259,7 +259,7 @@ export class AdStore {
                 reportedBy: 1,
                 reportType: 1,
                 adId: 1,
-                createdAt: 1, 
+                createdAt: 1,
                 updatedAt: 1,
                 message: 1,
                 'user._id': 1,
@@ -660,15 +660,25 @@ export class AdStore {
     }
   }
 
+  async deleteManyAds(ids: string[]) {
+    try {
+      return await this.adModel.deleteMany({
+        _id: { $in: ids },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+  
   async deleteUserAds(id: string) {
     return await this.adModel.deleteMany({ createdBy: id });
   }
 
-  async findExistingAdByReportedAdId(adId: string){
+  async findExistingAdByReportedAdId(adId: string) {
     return await this.adModel.findOne({
-      adId: adId
-    })
-  };
+      adId: adId,
+    });
+  }
 
   async reportAd(
     adId: string,

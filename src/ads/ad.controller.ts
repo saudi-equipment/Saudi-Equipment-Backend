@@ -84,12 +84,12 @@ export class AdController {
   ) {
     try {
       await this.expireAdsMiddleware.use(req, response, () => {});
-      
-       if (!files || files.length === 0) {
-         throw new BadRequestException('Select at least one file');
-       }
 
-      validateAdImagesSize(files)
+      if (!files || files.length === 0) {
+        throw new BadRequestException('Select at least one file');
+      }
+
+      validateAdImagesSize(files);
       const data = await this.adService.createAd(user, payload, files);
       return response
         .status(HttpStatus.CREATED)
@@ -120,41 +120,40 @@ export class AdController {
     }
   }
 
-    @UseGuards(RolesGuard)
-    @Roles(UserRole.USER, UserRole.ADMIN)
-    @Put(':id')
-    @UseInterceptors(FilesInterceptor('files', 10))
-    async updateAd(
-      @Req() req: Request,
-      @Res() response,
-      @Param('id') id: string,
-      @GetUser() user: User,
-      @Body() payload: UpdateAdDto,
-      @UploadedFiles() files: Express.Multer.File[],
-    ) {
-      try {
-    
-        await this.expireAdsMiddleware.use(req, response, () => {});
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.USER, UserRole.ADMIN)
+  @Put(':id')
+  @UseInterceptors(FilesInterceptor('files', 10))
+  async updateAd(
+    @Req() req: Request,
+    @Res() response,
+    @Param('id') id: string,
+    @GetUser() user: User,
+    @Body() payload: UpdateAdDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    try {
+      await this.expireAdsMiddleware.use(req, response, () => {});
 
-        validateAdImagesSize(files);
-        const data = await this.adService.updateAd(id, user, payload, files);
+      validateAdImagesSize(files);
+      const data = await this.adService.updateAd(id, user, payload, files);
 
-        if (!data) {
-          return response
-            .status(HttpStatus.NOT_FOUND)
-            .json({ message: 'Ad not found or update failed', data: null });
-        }
-
+      if (!data) {
         return response
-          .status(HttpStatus.OK)
-          .json({ message: 'Ad updated successfully', data });
-      } catch (error) {
-        return response.status(HttpStatus.BAD_REQUEST).json({
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: error.message || 'An error occurred while updating the ad',
-        });
+          .status(HttpStatus.NOT_FOUND)
+          .json({ message: 'Ad not found or update failed', data: null });
       }
+
+      return response
+        .status(HttpStatus.OK)
+        .json({ message: 'Ad updated successfully', data });
+    } catch (error) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: error.message || 'An error occurred while updating the ad',
+      });
     }
+  }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -239,6 +238,29 @@ export class AdController {
       return response.status(HttpStatus.NOT_FOUND).json({
         statusCode: HttpStatus.NOT_FOUND,
         message: error.message || 'Ad Not found',
+      });
+    }
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.USER, UserRole.ADMIN)
+  @Delete('delete-ads')
+  async deleteManyAd(@Res() response, @Body('ids') ids: string[]) {
+    try {
+      const result = await this.adService.deleteManyAds(ids);
+      if (result) {
+        return response.status(200).json({
+          message: 'Ads successfully deleted',
+        });
+      } else {
+        return response.status(404).json({
+          message: 'Ads not found',
+        });
+      }
+    } catch (error) {
+      return response.status(500).json({
+        message: 'Error deleting ads',
+        error: error.message,
       });
     }
   }
