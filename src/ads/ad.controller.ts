@@ -74,7 +74,7 @@ export class AdController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Post('create-ad')
-  @UseInterceptors(FilesInterceptor('files', 5))
+  @UseInterceptors(FilesInterceptor('files', 10))
   async createAds(
     @Req() req: Request,
     @Res() response,
@@ -87,10 +87,6 @@ export class AdController {
       
        if (!files || files.length === 0) {
          throw new BadRequestException('Select at least one file');
-       }
-
-       if (files.length > 5) {
-         throw new BadRequestException('Select only 5 files');
        }
 
       validateAdImagesSize(files)
@@ -124,39 +120,39 @@ export class AdController {
     }
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.USER, UserRole.ADMIN)
-  @Put(':id')
-  @UseInterceptors(FilesInterceptor('files', 10))
-  async updateAd(
-    @Req() req: Request,
-    @Res() response,
-    @Param('id') id: string,
-    @GetUser() user: User,
-    @Body() payload: UpdateAdDto,
-    @UploadedFiles() files: Express.Multer.File[],
-  ) {
-    try {
-  
-      await this.expireAdsMiddleware.use(req, response, () => {});
-      const data = await this.adService.updateAd(id, user, payload, files);
+    @UseGuards(RolesGuard)
+    @Roles(UserRole.USER, UserRole.ADMIN)
+    @Put(':id')
+    @UseInterceptors(FilesInterceptor('files', 10))
+    async updateAd(
+      @Req() req: Request,
+      @Res() response,
+      @Param('id') id: string,
+      @GetUser() user: User,
+      @Body() payload: UpdateAdDto,
+      @UploadedFiles() files: Express.Multer.File[],
+    ) {
+      try {
+    
+        await this.expireAdsMiddleware.use(req, response, () => {});
+        const data = await this.adService.updateAd(id, user, payload, files);
 
-      if (!data) {
+        if (!data) {
+          return response
+            .status(HttpStatus.NOT_FOUND)
+            .json({ message: 'Ad not found or update failed', data: null });
+        }
+
         return response
-          .status(HttpStatus.NOT_FOUND)
-          .json({ message: 'Ad not found or update failed', data: null });
+          .status(HttpStatus.OK)
+          .json({ message: 'Ad updated successfully', data });
+      } catch (error) {
+        return response.status(HttpStatus.BAD_REQUEST).json({
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: error.message || 'An error occurred while updating the ad',
+        });
       }
-
-      return response
-        .status(HttpStatus.OK)
-        .json({ message: 'Ad updated successfully', data });
-    } catch (error) {
-      return response.status(HttpStatus.BAD_REQUEST).json({
-        statusCode: HttpStatus.BAD_REQUEST,
-        message: error.message || 'An error occurred while updating the ad',
-      });
     }
-  }
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
