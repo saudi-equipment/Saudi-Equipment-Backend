@@ -15,7 +15,7 @@ export function validateAdImagesSize(files?: any) {
       throw new BadRequestException('Files size must be less than 8MB');
     }
 
-   if (!rejectedFileTypes.includes(files.mimetype)) {
+   if (rejectedFileTypes.includes(files.mimetype)) {
      throw new BadRequestException('Video uploads are not allowed');
    }
   }
@@ -25,7 +25,7 @@ export function validateProfilePicSize(profilePicture: any) {
   if (profilePicture.size > 3 * 1024 * 1024)
     throw new BadRequestException('Profile picture size must be less than 3MB');
 
-   if (!rejectedFileTypes.includes(profilePicture.mimetype)) {
+   if (rejectedFileTypes.includes(profilePicture.mimetype)) {
      throw new BadRequestException('Video uploads are not allowed');
    }
 }
