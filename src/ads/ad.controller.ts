@@ -245,9 +245,9 @@ export class AdController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER, UserRole.ADMIN)
   @Delete('delete-ads')
-  async deleteManyAd(@Res() response, @Body('ids') ids: string[]) {
+  async deleteManyAd(@Res() response, @Body() body: { ids: string[] }) {
     try {
-      const result = await this.adService.deleteManyAds(ids);
+      const result = await this.adService.deleteManyAds(body.ids);
       if (result) {
         return response.status(200).json({
           message: 'Ads successfully deleted',

@@ -24,11 +24,13 @@ export class AdStore {
     payload: CreateAdDto,
     adId: string,
     uploadedUrls: string[],
+    transactionId?: string,
   ): Promise<IAd> {
     const newAd = new this.adModel({
       createdBy: user.id,
       adId: adId,
       isPromoted: payload.isFeatured,
+      transactionId: transactionId,
       promotionStartDate: payload.startDate,
       promotionEndDate: payload.endDate,
       promotionPlan: payload.promotionPlan,
@@ -63,6 +65,7 @@ export class AdStore {
     user: User,
     payload: UpdateAdDto,
     uploadedUrls?: string[],
+    transactionId?: string,
   ): Promise<IAd> {
     try {
       const updatedAd = await this.adModel.findByIdAndUpdate(
@@ -72,6 +75,8 @@ export class AdStore {
             isPromoted: payload.isFeatured,
             promotionStartDate: payload.startDate,
             promotionEndDate: payload.endDate,
+            transactionId: transactionId,
+            promotionPrice: payload.promotionPrice,
             ...payload,
             images: uploadedUrls || null,
           },
@@ -123,6 +128,14 @@ export class AdStore {
 
   async getUserAdsCount(userId: string): Promise<number> {
     return await this.adModel.countDocuments({ createdBy: userId });
+  }
+
+  async getAdsByIds(ids: string[]): Promise<IAd[]> {
+    return await this.adModel
+      .find({
+        _id: { $in: ids },
+      })
+      .exec();
   }
 
   async getAdById(id: string): Promise<IAd> {
@@ -343,6 +356,7 @@ export class AdStore {
                 $or: [
                   { titleEn: { $regex: search, $options: 'i' } },
                   { titleAr: { $regex: search, $options: 'i' } },
+                  { adId: { $regex: search, $options: 'i' } },
                   { 'userDetails.email': { $regex: search, $options: 'i' } },
                   {
                     'userDetails.phoneNumber': {
@@ -589,7 +603,10 @@ export class AdStore {
       if (isHome) {
         pipeline.push({
           $facet: {
-            promotedAds: [{ $match: promotedFilters }, { $limit: 4 }],
+            promotedAds: [
+              { $match: { ...regularFilters, isPromoted } },
+              { $limit: 4 },
+            ],
             saleAds: [
               { $match: { ...regularFilters, category: { $regex: /Sale/i } } },
               { $limit: 4 },
@@ -669,7 +686,7 @@ export class AdStore {
       throw error;
     }
   }
-  
+
   async deleteUserAds(id: string) {
     return await this.adModel.deleteMany({ createdBy: id });
   }

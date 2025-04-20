@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -16,6 +17,7 @@ import { IAd, IReportAd } from 'src/interfaces/ads';
 import { getPagination } from 'src/utils/pagination.helper';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
 import { generateAdId } from 'src/utils';
+import { generateTransactionId } from 'src/utils/generate.transaction.id.helper';
 
 @Injectable()
 export class AdService {
@@ -31,7 +33,7 @@ export class AdService {
   ) {
     try {
       const adId = generateAdId();
-
+      let transactionId: string | undefined;
       if (user.isPremiumUser === true) {
         const uploadedUrls = await Promise.all(
           files.map((file) =>
@@ -39,11 +41,16 @@ export class AdService {
           ),
         );
 
+        if (payload.isFeatured) {
+          transactionId = generateTransactionId(); 
+        }
+
         const data = await this.adStore.createAds(
           user,
           payload,
           adId,
           uploadedUrls,
+          transactionId,
         );
         return data;
       } else {
@@ -64,6 +71,7 @@ export class AdService {
           payload,
           adId,
           uploadedUrls,
+          undefined,
         );
         return data;
       }
@@ -79,7 +87,6 @@ export class AdService {
     files?: Express.Multer.File[],
   ): Promise<IAd> {
     try {
-      console.log('File', files);
       const existingAd = await this.adStore.getAdById(id);
 
       if (!existingAd) {
@@ -114,11 +121,18 @@ export class AdService {
           : [];
 
       const updatedImages = [...remainingImages, ...newUploadedUrls];
+      let transactionId: string | undefined;
+    
+      if (user.isPremiumUser === true && payload.isFeatured === true) {
+        transactionId = generateTransactionId();
+      }
+
       const updatedAd = await this.adStore.updateAd(
         id,
         user,
         payload,
         updatedImages,
+        transactionId,
       );
 
       return updatedAd;
@@ -128,20 +142,61 @@ export class AdService {
     }
   }
 
-  async deleteAd(id: string) {
-    try {
-      return await this.adStore.deleteAd(id);
-    } catch (error) {
-      error;
+  async deleteAd(id: string): Promise<boolean> {
+    const adToDelete = await this.adStore.getAdById(id);
+
+    if (!adToDelete) {
+      throw new NotFoundException('Ad not found');
     }
+
+    // Delete images from Digital Ocean if they exist
+    if (adToDelete.images && adToDelete.images.length > 0) {
+      try {
+        await this.digitalOceanService.deleteFilesFromSpaces(adToDelete.images);
+      } catch (error) {
+        console.error('Error deleting images from Digital Ocean:', error);
+      }
+    }
+
+    // Delete the ad from database
+    const deletionResult = await this.adStore.deleteAd(id);
+
+    if (!deletionResult) {
+      throw new Error('Failed to delete ad from database');
+    }
+
+    return true;
   }
 
-  async deleteManyAds(ids: string[]) {
-    try {
-      return await this.adStore.deleteManyAds(ids);
-    } catch (error) {
-      error;
+  async deleteManyAds(ids: string[]): Promise<boolean> {
+    const adsToDelete = await this.adStore.getAdsByIds(ids);
+
+    if (!adsToDelete || adsToDelete.length === 0) {
+      throw new NotFoundException('Ads not found');
     }
+
+    const allImageUrls: string[] = [];
+    adsToDelete.forEach((ad) => {
+      if (ad.images && ad.images.length > 0) {
+        allImageUrls.push(...ad.images);
+      }
+    });
+
+    if (allImageUrls.length > 0) {
+      try {
+        await this.digitalOceanService.deleteFilesFromSpaces(allImageUrls);
+      } catch (error) {
+        console.error('Error deleting images from Digital Ocean:', error);
+      }
+    }
+
+    const deletionResult = await this.adStore.deleteManyAds(ids);
+
+    if (!deletionResult) {
+      throw new Error('Failed to delete ads from database');
+    }
+
+    return true;
   }
 
   async reportAd(

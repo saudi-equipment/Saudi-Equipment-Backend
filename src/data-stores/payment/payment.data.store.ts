@@ -221,6 +221,7 @@ export class PaymentStore {
             adId: 1,
             isPromoted: 1,
             promotionPlan: 1,
+            promotionPrice: 1,
             promotionStartDate: 1,
             promotionEndDate: 1,
             duration: 1,
@@ -343,6 +344,7 @@ export class PaymentStore {
         paymentType,
         paymentCompany,
         transactionId,
+        amount,
       } = payload;
 
       const ad = await this.adModel.findById({ _id: adId, createdBy: userId });
@@ -376,7 +378,7 @@ export class PaymentStore {
       ad.paymentCompany = paymentCompany;
       ad.paymentType = paymentType;
       ad.transactionId = transactionId;
-
+      ad.promotionPrice = amount;
       await ad.save();
       return ad;
     } catch (error) {

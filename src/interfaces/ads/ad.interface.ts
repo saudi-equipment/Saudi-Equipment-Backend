@@ -25,6 +25,7 @@ export interface IAd {
   soldDate?: Date;
   duration?: string;
   paymentType?: string;
+  promotionPrice?: string;
   paymentCompany?: string;
   transactionId?: string;
   user?: User;
