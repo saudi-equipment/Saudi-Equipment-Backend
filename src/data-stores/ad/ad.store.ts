@@ -654,10 +654,12 @@ export class AdStore {
   async getMyAds(user: User): Promise<IAd[]> {
     try {
       return this.adModel
-        .aggregate([
-          { $match: { createdBy: user.id } },
-          { $sort: { createdAt: -1 } },
-        ])
+        .find({ createdBy: user.id })
+        .select('-transactionId')
+        .select('-paymentCompany')
+        .select('-paymentType')
+        .select('-promotionPrice')
+        .sort({ createdAt: -1 })
         .exec();
     } catch (error) {
       throw error;
