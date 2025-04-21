@@ -603,10 +603,7 @@ export class AdStore {
       if (isHome) {
         pipeline.push({
           $facet: {
-            promotedAds: [
-              { $match: { ...regularFilters, isPromoted } },
-              { $limit: 4 },
-            ],
+            promotedAds: [{ $match: promotedFilters }, { $limit: 4 }],
             saleAds: [
               { $match: { ...regularFilters, category: { $regex: /Sale/i } } },
               { $limit: 4 },
