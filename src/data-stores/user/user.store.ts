@@ -166,7 +166,7 @@ export class UserStore {
   async updateUser(
     userId: string,
     payload: UserUpdateDto,
-    updatedProfilePic?: string,
+    newProfilePicUrl?: string,
   ): Promise<IUser | null> {
     const existingUser = await this.userModel
       .findById(userId)
@@ -181,6 +181,7 @@ export class UserStore {
         {
           $set: {
             ...payload,
+            profilePicture: newProfilePicUrl,
             isEmailVerified: payload.emailStatus,
             isActive: payload.phoneNumberStatus,
             isPremiumUser: payload.isPremiumUser,
