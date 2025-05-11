@@ -4,17 +4,27 @@ import { ContactUsDto } from './dtos/contact.us.dto';
 import { NotificationService } from 'src/notification/notification.service';
 import { GetAllContactListQueryDto } from './dtos/get.all.contact.us.query.dto';
 import { getPagination } from 'src/utils';
+import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
 
 @Injectable()
 export class NewsletterService {
   constructor(
     private readonly newsLetterStore: NewsLetterStore,
     private readonly notificationService: NotificationService,
+    private readonly digitalOceanService: DigitalOceanService,
   ) {}
 
-  async createContactUs(payload: ContactUsDto) {
+  async createContactUs(
+    payload: ContactUsDto,
+    attachment?: Express.Multer.File,
+  ) {
     try {
-      const data = await this.newsLetterStore.createContactUs(payload);
+      const attachmentUrl =
+        await this.digitalOceanService.uploadFileToSpaces(attachment);
+      const data = await this.newsLetterStore.createContactUs(
+        payload,
+        attachmentUrl,
+      );
       // await this.notificationService.sendContactEmail(data);
       return data;
     } catch (error) {

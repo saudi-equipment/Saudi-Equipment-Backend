@@ -9,7 +9,9 @@ import {
   Query,
   Req,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { NewsletterService } from './newsletter.service';
 import { Roles } from 'src/decorators/roles.decorator';
@@ -18,16 +20,27 @@ import { UserRole } from 'src/enums';
 import { ContactUsDto } from './dtos/contact.us.dto';
 import { Public } from 'src/decorators/public.routes.decorator';
 import { GetAllContactListQueryDto } from './dtos/get.all.contact.us.query.dto';
+import { validateProfilePicSize } from 'src/utils';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('newsletter')
 export class NewsletterController {
   constructor(private readonly newsLetterService: NewsletterService) {}
 
   @Public()
+  @UseInterceptors(FileInterceptor('attachment'))
   @Post('contact-us')
-  async createContactUs(@Res() response, @Body() payload: ContactUsDto) {
+  async createContactUs(
+    @Res() response,
+    @Body() payload: ContactUsDto,
+    @UploadedFile() attachment?: Express.Multer.File,
+  ) {
     try {
-      const data = await this.newsLetterService.createContactUs(payload);
+      validateProfilePicSize(attachment);
+      const data = await this.newsLetterService.createContactUs(
+        payload,
+        attachment,
+      );
       return response
         .status(HttpStatus.CREATED)
         .json({ message: 'contact us created successfully', data });

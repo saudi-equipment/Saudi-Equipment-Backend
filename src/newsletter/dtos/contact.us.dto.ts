@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsEmail, IsString, IsNumber, IsOptional, IsMongoId } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsEmail,
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsMongoId,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class ContactUsDto {
   @ApiProperty({ description: 'Full name of the user' })
@@ -7,10 +16,11 @@ export class ContactUsDto {
   @IsString()
   fullName: string;
 
-  @ApiProperty({ description: 'Phone number of the user' })
-  @IsNotEmpty()
-  @IsNumber()
-  phoneNumber: number;
+  @ApiProperty({ description: 'The phone number of the user' })
+  @IsString()
+  @MaxLength(12)
+  @MinLength(9)
+  readonly phoneNumber: string;
 
   @ApiProperty({ description: 'Email address of the user' })
   @IsNotEmpty()
@@ -36,5 +46,4 @@ export class ContactUsDto {
   @IsNotEmpty()
   @IsString()
   message: string;
-
 }

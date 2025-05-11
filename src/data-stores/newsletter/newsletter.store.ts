@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types} from 'mongoose';
-import { UserRole } from 'src/enums';
+import { Model, Types } from 'mongoose';
 import { IContactUs } from 'src/interfaces/newsletter/contact.us';
 import { ContactUsDto } from 'src/newsletter/dtos/contact.us.dto';
 import { GetAllContactListQueryDto } from 'src/newsletter/dtos/get.all.contact.us.query.dto';
@@ -12,20 +11,24 @@ export class NewsLetterStore {
     @InjectModel('ContactUs') private contactUsModel: Model<IContactUs>,
   ) {}
 
-  async createContactUs(payload: ContactUsDto): Promise<IContactUs> {
+  async createContactUs(
+    payload: ContactUsDto,
+    attachmentUrl?: string,
+  ): Promise<IContactUs> {
     const contactUs = new this.contactUsModel({
+      attachmentUrl: attachmentUrl,
       ...payload,
     });
     await contactUs.save();
     return contactUs;
   }
 
-   async delete(id: string): Promise<void> {
-      return await this.contactUsModel.findByIdAndDelete({
-        _id: new Types.ObjectId(id),
-      });
-    }
-  
+  async delete(id: string): Promise<void> {
+    return await this.contactUsModel.findByIdAndDelete({
+      _id: new Types.ObjectId(id),
+    });
+  }
+
   async getAllContactList(
     query: GetAllContactListQueryDto,
     skip: number,
@@ -97,7 +100,7 @@ export class NewsLetterStore {
       .aggregate(aggregationPipeline)
       .exec();
 
-      return {
+    return {
       totalQueries: result[0]?.totalQueries || 0,
       queries: result[0]?.queries || [],
     };
