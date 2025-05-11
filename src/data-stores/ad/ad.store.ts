@@ -201,6 +201,11 @@ export class AdStore {
         },
       ]);
 
+      await this.adModel.updateOne(
+        { _id: new Types.ObjectId(id) },
+        { $inc: { views: 1 } },
+      );
+
       return ad[0];
     } catch (error) {
       throw error;
