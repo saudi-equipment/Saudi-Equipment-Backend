@@ -376,6 +376,87 @@ export class UserStore {
     };
   }
 
+  async getAllUserList(
+    query: GetUserListQueryDto,
+    skip: number,
+    currentLimit: number,
+  ): Promise<{
+    users: IUser[];
+    total: number;
+    totalPages: number;
+  }> {
+    const { search, sortType, orderType } = query;
+
+    const matchStage: any = {
+      isDeleted: false,
+      isActive: true,
+    };
+
+    if (search) {
+      matchStage.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { phoneNumber: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { city: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const sortStage: Record<string, any> = {};
+
+    if (sortType === 'Newest') {
+      sortStage.createdAt = -1;
+    } else if (sortType === 'Oldest') {
+      sortStage.createdAt = 1;
+    }
+
+    if (orderType === 'A-Z') {
+      sortStage.name = 1;
+    } else if (orderType === 'Z-A') {
+      sortStage.name = -1;
+    }
+
+    const aggregationPipeline = [
+      { $match: matchStage },
+      { $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 } },
+      {
+        $facet: {
+          userList: [
+            { $skip: skip },
+            { $limit: currentLimit },
+            {
+              $project: {
+                password: 0,
+                ads: 0,
+                blockedUsers: 0,
+                isDeleted: 0,
+                isBlocked: 0,
+                subscription: 0,
+                __v: 0,
+              },
+            },
+          ],
+          totalCount: [{ $count: 'count' }],
+        },
+      },
+      {
+        $project: {
+          users: '$userList',
+          total: { $arrayElemAt: ['$totalCount.count', 0] },
+        },
+      },
+    ];
+
+    const result = await this.userModel.aggregate(aggregationPipeline).exec();
+    const total = result[0]?.total || 0;
+    const totalPages = Math.ceil(total / currentLimit);
+
+    return {
+      total,
+      totalPages,
+      users: result[0]?.users || [],
+    };
+  }
+
   async getUserWithAd(id: string): Promise<IUser | null> {
     const result = await this.userModel.aggregate([
       {

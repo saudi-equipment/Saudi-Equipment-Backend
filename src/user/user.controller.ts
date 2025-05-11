@@ -49,7 +49,7 @@ export class UserController {
     try {
       await this.expireAdsMiddleware.use(req, response, () => {});
 
-      validateProfilePicSize(profilePicture)
+      validateProfilePicSize(profilePicture);
       const data = await this.userService.updateUser(
         userId,
         payload,
@@ -117,6 +117,12 @@ export class UserController {
   @Get('get-user-list')
   async getUserList(@Query() query: GetUserListQueryDto) {
     return await this.userService.getUserList(query);
+  }
+
+  @Public()
+  @Get('user-list')
+  async getAllUserList(@Query() query: GetUserListQueryDto) {
+    return await this.userService.getAllUserList(query);
   }
 
   @UseGuards(RolesGuard)

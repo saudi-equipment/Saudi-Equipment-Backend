@@ -10,7 +10,12 @@ import {
 import { SignUpDto } from 'src/auth/dtos';
 import { UserStore } from 'src/data-stores/user/user.store';
 import { IUser } from 'src/interfaces/user/user.interface';
-import { AddAdminUser, AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
+import {
+  AddAdminUser,
+  AddUser,
+  GetUserListQueryDto,
+  UserUpdateDto,
+} from './dtos';
 import { User } from 'src/schemas/user/user.schema';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
 import { getPagination, hashPassword, validatePassword } from 'src/utils';
@@ -75,13 +80,13 @@ export class UserService {
     return existingEmail;
   }
 
-    async findExistingUser(email: string): Promise<IUser | null> {
-      const user = await this.userStore.findExistingUser(email);
-      if (user) {
-        throw new ConflictException('Email is already exist');
-      }
-      return user;
+  async findExistingUser(email: string): Promise<IUser | null> {
+    const user = await this.userStore.findExistingUser(email);
+    if (user) {
+      throw new ConflictException('Email is already exist');
     }
+    return user;
+  }
 
   async findUserById(id: string): Promise<IUser | null> {
     const user = await this.userStore.findById(id);
@@ -248,12 +253,37 @@ export class UserService {
     }
   }
 
+  async getAllUserList(query: GetUserListQueryDto) {
+    try {
+      const { page, limit } = query;
+      const { skip, limit: currentLimit } = getPagination({ page, limit });
+
+      const users = await this.userStore.getAllUserList(
+        query,
+        skip,
+        currentLimit,
+      );
+
+      if (!users) {
+        throw new NotFoundException('Users not found');
+      }
+
+      return users;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getAdminList(query: CommonQueryDto) {
     try {
       const { page, limit } = query;
       const { skip, limit: currentLimit } = getPagination({ page, limit });
 
-      const users = await this.userStore.getAdminList(query, skip, currentLimit);
+      const users = await this.userStore.getAdminList(
+        query,
+        skip,
+        currentLimit,
+      );
 
       if (!users) {
         throw new NotFoundException('Users not found');
@@ -266,12 +296,11 @@ export class UserService {
   }
 
   async addUserByAdmin(payload: AddUser) {
-  
-      validatePassword(payload.password, payload.confirmPassword);
+    validatePassword(payload.password, payload.confirmPassword);
 
-      const hashedPassword = await hashPassword(payload.password);
-      const userData = { ...payload, password: hashedPassword };
-      return await this.userStore.addUserByAdmin(userData);
+    const hashedPassword = await hashPassword(payload.password);
+    const userData = { ...payload, password: hashedPassword };
+    return await this.userStore.addUserByAdmin(userData);
   }
 
   async addAdmin(payload: AddAdminUser) {
