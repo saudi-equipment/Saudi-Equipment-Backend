@@ -733,4 +733,8 @@ export class AdStore {
       throw error;
     }
   }
+
+  async findAllAds(user: User) {
+    return await this.adModel.find({ createdBy: user.id });
+  }
 }
