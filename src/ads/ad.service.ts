@@ -16,7 +16,7 @@ import { AdStore } from 'src/data-stores/ad/ad.store';
 import { IAd, IReportAd } from 'src/interfaces/ads';
 import { getPagination } from 'src/utils/pagination.helper';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
-import { generateAdId } from 'src/utils';
+import { checkDuplicateImages, generateAdId } from 'src/utils';
 import { generateTransactionId } from 'src/utils/generate.transaction.id.helper';
 
 @Injectable()
@@ -32,6 +32,17 @@ export class AdService {
     files: Express.Multer.File[],
   ) {
     try {
+      const userAds = await this.adStore.findAllAds(user);
+      const images = userAds.flatMap((ad) => ad.images);
+
+      const duplicates = checkDuplicateImages(files, images);
+
+      if (duplicates.length > 0) {
+        throw new Error(
+          'Image duplication error, please upload different images.',
+        );
+      }
+
       const adId = generateAdId();
       let transactionId: string | undefined;
       if (user.isPremiumUser === true) {
@@ -42,7 +53,7 @@ export class AdService {
         );
 
         if (payload.isFeatured) {
-          transactionId = generateTransactionId(); 
+          transactionId = generateTransactionId();
         }
 
         const data = await this.adStore.createAds(
@@ -93,6 +104,17 @@ export class AdService {
         throw new NotFoundException('Ad not found');
       }
 
+      const userAds = await this.adStore.findAllAds(user);
+      const images = userAds.flatMap((ad) => ad.images);
+
+      const duplicates = checkDuplicateImages(files, images);
+
+      if (duplicates.length > 0) {
+        throw new Error(
+          'Image duplication error, please upload different images.',
+        );
+      }
+
       let existingImages = existingAd.images || [];
       const remainingImages = payload.imageUrls || [];
 
@@ -122,7 +144,7 @@ export class AdService {
 
       const updatedImages = [...remainingImages, ...newUploadedUrls];
       let transactionId: string | undefined;
-    
+
       if (user.isPremiumUser === true && payload.isFeatured === true) {
         transactionId = generateTransactionId();
       }
