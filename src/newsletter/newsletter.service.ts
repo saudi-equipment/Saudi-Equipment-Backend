@@ -19,13 +19,18 @@ export class NewsletterService {
     attachment?: Express.Multer.File,
   ) {
     try {
-      const attachmentUrl =
-        await this.digitalOceanService.uploadFileToSpaces(attachment);
+      let attachmentUrl = null;
+
+      if (attachment) {
+        attachmentUrl =
+          await this.digitalOceanService.uploadFileToSpaces(attachment);
+      }
+
       const data = await this.newsLetterStore.createContactUs(
         payload,
         attachmentUrl,
       );
-      // await this.notificationService.sendContactEmail(data);
+
       return data;
     } catch (error) {
       throw error;
