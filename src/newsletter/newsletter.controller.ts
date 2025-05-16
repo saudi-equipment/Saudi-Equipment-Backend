@@ -36,7 +36,9 @@ export class NewsletterController {
     @UploadedFile() attachment?: Express.Multer.File,
   ) {
     try {
-      validateProfilePicSize(attachment);
+      if (attachment) {
+        validateProfilePicSize(attachment);
+      }
       const data = await this.newsLetterService.createContactUs(
         payload,
         attachment,
