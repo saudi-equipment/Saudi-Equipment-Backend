@@ -104,17 +104,6 @@ export class AdService {
         throw new NotFoundException('Ad not found');
       }
 
-      const userAds = await this.adStore.findAllAds(user);
-      const images = userAds.flatMap((ad) => ad.images);
-
-      const duplicates = checkDuplicateImages(files, images);
-
-      if (duplicates.length > 0) {
-        throw new Error(
-          'Image duplication error, please upload different images.',
-        );
-      }
-
       let existingImages = existingAd.images || [];
       const remainingImages = payload.imageUrls || [];
 
