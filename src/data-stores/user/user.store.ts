@@ -57,7 +57,6 @@ export class UserStore {
     await newUser.save();
 
     if (payload.isPremiumUser) {
-      console.log("premium user case ---------------------------", payload);
       const newSubscription = new this.subscriptionModel({
         user: newUser._id,
         startDate: payload.startDate || new Date(),
@@ -184,7 +183,6 @@ export class UserStore {
     newProfilePicUrl?: string,
   ): Promise<IUser | null> {
     
-    console.log("payload", payload);
     const existingUser = await this.userModel
       .findById(userId)
       .populate('subscriptions')
@@ -244,7 +242,7 @@ export class UserStore {
       }
       
       } else {
-        console.log("else case ---------------------------", payload);
+       
         const newSubscription = new this.subscriptionModel({
           user: userId,
           startDate: payload.startDate || new Date(),
@@ -334,12 +332,16 @@ export class UserStore {
     } catch (error) {}
   }
 
-  async getUserPaymentDetails(userId: string) {
+  async getUserPaymentDetails(user: User) {
     try {
-      console.log(userId);
+      console.log(user.id);
+      
+      // Validate and convert user ID to ObjectId
+      const userId = new Types.ObjectId(user.id);
+      
       const userPaymentDetails = await this.userModel.aggregate([
         {
-          $match: { _id: new Types.ObjectId(userId) }
+          $match: { _id: userId }
         },
         {
           $lookup: {
@@ -665,8 +667,7 @@ export class UserStore {
       },
       {
         $lookup: {
-          from: 'ads',
-          let: { userAds: '$ads' },
+          from: 'ads',          let: { userAds: '$ads' },
           pipeline: [
             {
               $match: {

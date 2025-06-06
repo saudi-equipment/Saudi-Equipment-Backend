@@ -236,9 +236,9 @@ export class UserService {
     };
   }
 
-  async getUserPaymentDetails(userId: string) {
+  async getUserPaymentDetails(user: User) {
     try {
-      return await this.userStore.getUserPaymentDetails(userId);
+      return await this.userStore.getUserPaymentDetails(user);
     } catch (error) {
       throw error;
     }

@@ -38,9 +38,9 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Get('user-payment-details')
-  async getUserPaymentDetails(@GetUser('id') userId: string) {
+  async getUserPaymentDetails(@GetUser() user: User) {
     try {
-      return await this.userService.getUserPaymentDetails(userId);
+      return await this.userService.getUserPaymentDetails(user);
     } catch (error) {
       throw error;
     }
