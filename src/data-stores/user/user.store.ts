@@ -147,14 +147,21 @@ export class UserStore {
   async findById(id: string): Promise<IUser | null> {
     const user = await this.userModel
       .findById(id)
-      .select('-ads')
+      .select('-ads -paymentTransactions -adPromotions -blockedUsers')
       .select('-__v')
       .populate({
-        path: 'subscription',
+        path: 'subscriptions',
         select: '-__v',
+        match: { subscriptionStatus: 'active' },
+        options: { limit: 1 }
       })
       .exec();
 
+    // If user has active subscriptions, store the first one
+    if (user && user.subscriptions && user.subscriptions.length > 0) {
+      user.subscription = user.subscriptions[0];
+    } 
+    
     return user;
   }
 
@@ -437,7 +444,7 @@ export class UserStore {
                   _id: '$$ap._id',
                   adId: '$$ap.adId',
                   promotedBy: '$$ap.promotedBy',
-                  promotionPlan: '$$ap.promotionPlan',
+                  plan: '$$ap.promotionPlan',
                   startDate: '$$ap.promotionStartDate',
                   endDate: '$$ap.promotionEndDate',
                   payment: {

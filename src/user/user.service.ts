@@ -193,9 +193,9 @@ export class UserService {
         await this.userStore.activateOrDeactivateAccount(user);
       updatedUser.password = undefined;
       updatedUser.ads = undefined;
-      updatedUser.subscription = undefined;
+      updatedUser.subscriptions = undefined;
       return updatedUser;
-    } catch (error) {
+    } catch (error) { 
       throw error;
     }
   }

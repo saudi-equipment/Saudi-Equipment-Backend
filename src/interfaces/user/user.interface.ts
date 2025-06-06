@@ -28,7 +28,7 @@ export interface IUser extends User {
   otpId?: string;
   blockedUsers?: Types.ObjectId[];
   ads?: Ad[];
-  subscription?: Subscription[];
+  subscription?: Subscription;
   paymentTransactions?: PaymentTransaction[];
   adPromotions?: AdPromotion[];
 }

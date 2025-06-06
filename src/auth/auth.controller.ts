@@ -181,8 +181,7 @@ export class AuthController {
       return response.status(HttpStatus.OK).json({
         statusCode: HttpStatus.OK,
         message: 'Login successfully',
-        accessToken: token,
-        user,
+        accessToken: token
       });
     } catch (error) {
       throw error;
