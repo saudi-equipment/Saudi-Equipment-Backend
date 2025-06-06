@@ -236,6 +236,14 @@ export class UserService {
     };
   }
 
+  async getUserPaymentDetails(userId: string) {
+    try {
+      return await this.userStore.getUserPaymentDetails(userId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getUserList(query: GetUserListQueryDto) {
     try {
       const { page, limit } = query;

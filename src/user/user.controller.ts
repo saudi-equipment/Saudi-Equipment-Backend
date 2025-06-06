@@ -37,6 +37,17 @@ export class UserController {
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
+  @Get('user-payment-details')
+  async getUserPaymentDetails(@GetUser('id') userId: string) {
+    try {
+      return await this.userService.getUserPaymentDetails(userId);
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.USER)
   @UseInterceptors(FileInterceptor('profilePicture'))
   @Put('update')
   async updateUser(
@@ -129,36 +140,14 @@ export class UserController {
   @Roles(UserRole.ADMIN)
   @Post('add-user')
   async addUserByAdmin(@Body() payload: AddUser) {
-    this.userService.findExistingUser(payload.email);
+    try {
+      this.userService.findExistingUser(payload.email);
     this.userService.findExistingUserByNumber(payload.phoneNumber);
     return await this.userService.addUserByAdmin(payload);
+    } catch (error) {
+      throw error;
+    }
   }
-
-  // @UseGuards(RolesGuard)
-  // @Roles(UserRole.ADMIN)
-  // @Post('add-user')
-  // async addUserByAdmin(
-  //   @Body() payload: AddUser,
-  //   @Req() req: Request,
-  //   @Res() response,
-  // ) {
-  //   try {
-  //     await this.userService.findExistingUser(payload.email);
-  //     await this.userService.findExistingUserByNumber(payload.phoneNumber);
-  //     const result = await this.userService.addUserByAdmin(payload);
-  //     return response.status(HttpStatus.CREATED).json({
-  //       message: 'User created successfully',
-  //       ...result,
-  //     });
-  //   } catch (error) {
-  //     return response
-  //       .status(error.status || HttpStatus.BAD_REQUEST)
-  //       .json({
-  //         message: error.response?.message,
-  //         error: error.response?.error,
-  //       });
-  //   }
-  // }
 
   @Post('block/:userId')
   async toggleBlockUser(

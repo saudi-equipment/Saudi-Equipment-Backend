@@ -11,6 +11,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { SubscriptionDto } from './dtos/create-subscription.dto';
 import { PaymentService } from './payment.service';
 import { GetUser } from 'src/decorators/user.decorator';
 import { RolesGuard } from 'src/auth/guard/roles.gurad';
@@ -19,6 +20,8 @@ import { UserRole } from 'src/enums';
 import { Public } from 'src/decorators/public.routes.decorator';
 import { MoyasarService } from 'src/moyasar/moyasar.service';
 import { CommonQueryDto } from 'src/common/dtos';
+import { PromoteAdDto } from './dtos/promote-ad.dto';
+
 @UseGuards(RolesGuard)
 @Roles(UserRole.USER)
 @Controller('payment')
@@ -39,13 +42,14 @@ export class PaymentController {
   }
 
   @Post('create-subscription')
-  async createSubscription(@Body() payload: any) {
+  async createSubscription(@Body() payload: SubscriptionDto) {
     try {
       if (payload.status === 'paid') {
         const data = await this.paymentService.createSubscription(payload);
         return {
           subscription: data.subscription,
           user: data.user,
+          paymentTransaction: data.paymentTransaction,
         };
       }
 
@@ -83,13 +87,16 @@ export class PaymentController {
   }
 
   @Put('promote-ad')
-  async promoteAd(@Body() payload: any) {
+  async promoteAd(@Body() payload: PromoteAdDto) {
     try {
-      if (payload.status === 'paid') {
-        return await this.paymentService.promoteAd(payload);
-      }
-
-      return { message: 'Api call failed becuase the payment is failed' };
+      if(payload.status === 'paid'){
+        const data = await this.paymentService.promoteAd(payload);
+        return {
+          ad: data.ad,
+          adPromotion: data.adPromotion,
+          paymentTransaction: data.paymentTransaction,
+      };
+    }
     } catch (error) {
       throw error;
     }

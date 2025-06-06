@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { SignUpDto } from 'src/auth/dtos';
 import { CommonQueryDto } from 'src/common/dtos';
 import { UserRole } from 'src/enums';
 import { ISubscription } from 'src/interfaces/payment/subscription.interface';
+import { IPaymentTransaction } from 'src/interfaces/payment/payment.transaction.interface';
 import { IUser } from 'src/interfaces/user';
 import { User } from 'src/schemas/user/user.schema';
 import {
@@ -21,6 +22,8 @@ export class UserStore {
     @InjectModel('User') private userModel: Model<IUser>,
     @InjectModel('Subscription')
     private subscriptionModel: Model<ISubscription>,
+    @InjectModel('PaymentTransaction')
+    private paymentTransactionModel: Model<IPaymentTransaction>,
   ) {}
 
   async findExistingUser(email: string): Promise<IUser | null> {
@@ -54,24 +57,35 @@ export class UserStore {
     await newUser.save();
 
     if (payload.isPremiumUser) {
+      console.log("premium user case ---------------------------", payload);
       const newSubscription = new this.subscriptionModel({
-        transactionId: generateTransactionId(),
         user: newUser._id,
-        subscriptionStatus: 'active',
         startDate: payload.startDate || new Date(),
         endDate: payload.endDate,
-        subscribedBy: newUser._id,
-        createdBy: newUser._id,
         plan: payload.plan,
         duration: payload.duration,
         price: payload.price,
-        paymentType: payload.paymentType,
-        paymentCompany: payload.paymentCompany,
+        subscriptionStatus: 'active',
+        subscribedBy: newUser._id,
+        createdBy: newUser._id,
       });
 
       await newSubscription.save();
+      newUser.subscriptions = newSubscription.id;
+      await newUser.save();
 
-      newUser.subscription = newSubscription.id;
+      const newPaymentTransaction = new this.paymentTransactionModel({
+        subscription: newSubscription.id,
+        user: newUser._id,
+        paymentType: payload.paymentType,
+        paymentCompany: payload.paymentCompany,
+        currency: 'SAR',
+        price: payload.price,
+        status: 'paid',
+      });
+
+      await newPaymentTransaction.save();
+      newUser.paymentTransactions = newPaymentTransaction.id;
       await newUser.save();
     }
 
@@ -79,7 +93,8 @@ export class UserStore {
       .findById(newUser._id)
       .select('-password')
       .select('-__v')
-      .populate('subscription');
+      .populate('subscriptions')
+      .populate('paymentTransactions');
   }
 
   async addAdmin(payload: AddAdminUser) {
@@ -157,7 +172,7 @@ export class UserStore {
       return await this.userModel.updateOne(
         { email: email },
         { isEmailVerified: true },
-      );
+      );    
     } catch (error) {
       throw error.message;
     }
@@ -168,13 +183,17 @@ export class UserStore {
     payload: UserUpdateDto,
     newProfilePicUrl?: string,
   ): Promise<IUser | null> {
+    
+    console.log("payload", payload);
     const existingUser = await this.userModel
       .findById(userId)
-      .populate('subscription');
+      .populate('subscriptions')
+      .populate('paymentTransactions');
+
     if (!existingUser) {
       throw new Error('User not found');
     }
-
+    
     const updatedUser = await this.userModel
       .findOneAndUpdate(
         { _id: userId },
@@ -193,50 +212,77 @@ export class UserStore {
 
     if (payload.isPremiumUser) {
       const subscriptionData = {
-        ...(payload.startDate && { startDate: payload.startDate }),
-        ...(payload.endDate && { endDate: payload.endDate }),
-        ...(payload.plan && { plan: payload.plan }),
-        ...(payload.duration && { duration: payload.duration }),
-        ...(payload.price && { price: payload.price }),
-        ...(payload.paymentType && { paymentType: payload.paymentType }),
-        ...(payload.paymentCompany && {
-          paymentCompany: payload.paymentCompany,
-        }),
+        startDate: payload.startDate,
+        endDate: payload.endDate,
+        plan: payload.plan,
+        duration: payload.duration,
+        price: payload.price,
         subscriptionStatus: 'active',
       };
 
-      if (existingUser.subscription) {
+      const paymentTransactionData = {
+        price: payload.price,
+        paymentType: payload.paymentType,
+        paymentCompany: payload.paymentCompany,
+        currency: 'SAR',
+        status: 'paid',
+      };
+
+      if (payload.subscriptionId) {
         await this.subscriptionModel.findByIdAndUpdate(
-          existingUser.subscription._id,
+          payload.subscriptionId,
           { $set: subscriptionData },
           { new: true },
         );
+
+      if(payload.subscriptionId){
+        await this.paymentTransactionModel.findByIdAndUpdate(
+          payload.subscriptionId,
+          { $set: paymentTransactionData },
+          { new: true },
+        );
+      }
+      
       } else {
+        console.log("else case ---------------------------", payload);
         const newSubscription = new this.subscriptionModel({
-          transactionId: generateTransactionId(),
           user: userId,
           startDate: payload.startDate || new Date(),
           endDate: payload.endDate,
           plan: payload.plan,
           duration: payload.duration,
           price: payload.price,
-          paymentType: payload.paymentType,
-          paymentCompany: payload.paymentCompany,
           subscriptionStatus: 'active',
           subscribedBy: userId,
           createdBy: userId,
         });
 
         await newSubscription.save();
-        updatedUser.subscription = newSubscription.id;
+        updatedUser.subscriptions = newSubscription.id;
         await updatedUser.save();
+
+        const newPaymentTransaction = new this.paymentTransactionModel({
+          subscription: newSubscription.id,
+          user: userId,
+          paymentType: payload.paymentType,
+          paymentCompany: payload.paymentCompany,
+          currency: 'SAR',
+          price: payload.price,
+          status: 'paid',
+        });
+
+        await newPaymentTransaction.save();
+        updatedUser.paymentTransactions = newPaymentTransaction.id;
+        await updatedUser.save();
+        
       }
     }
 
     return this.userModel
       .findById(updatedUser._id)
       .select('-password')
-      .populate('subscription');
+      .populate('subscriptions')
+      .populate('paymentTransactions');
   }
 
   async activateOrDeactivateAccount(user: User): Promise<IUser | null> {
@@ -288,8 +334,162 @@ export class UserStore {
     } catch (error) {}
   }
 
-  async getUserList(
-    query: GetUserListQueryDto,
+  async getUserPaymentDetails(userId: string) {
+    try {
+      console.log(userId);
+      const userPaymentDetails = await this.userModel.aggregate([
+        {
+          $match: { _id: new Types.ObjectId(userId) }
+        },
+        {
+          $lookup: {
+            from: 'subscriptions',
+            localField: '_id',
+            foreignField: 'user',
+            as: 'subscriptions',
+          },
+        },
+        {
+          $lookup: {
+            from: 'adpromotions',
+            localField: '_id',
+            foreignField: 'user',
+            as: 'adPromotions'
+          }
+        },
+        {
+          $lookup: {
+            from: 'paymenttransactions',
+            localField: 'adPromotions._id',
+            foreignField: 'adPromotion',
+            as: 'adPromotionsPaymentTransactions'
+          }
+        },
+        {
+          $lookup: {
+            from: 'paymenttransactions',
+            localField: 'subscriptions._id',
+            foreignField: 'subscription',
+            as: 'subscriptionsPaymentTransactions'
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            email: 1,
+            phoneNumber: 1,
+            city: 1,
+            isPremiumUser: 1,
+            subscriptions: {
+              $map: {
+                input: '$subscriptions',
+                as: 'sub',
+                in: {
+                  _id: '$$sub._id',
+                  subscriptedBy: '$$sub.subscribedBy',
+                  plan: '$$sub.plan',
+                  status: '$$sub.subscriptionStatus',
+                  startDate: '$$sub.startDate',
+                  endDate: '$$sub.endDate',
+                  payment: {
+                    $let: {
+                      vars: {
+                        pt: {
+                          $arrayElemAt: [
+                            {
+                              $filter: {
+                                input: '$subscriptionsPaymentTransactions',
+                                as: 'pt',
+                                cond: {
+                                  $eq: ['$$pt.subscription', '$$sub._id']
+                                }
+                              }
+                            },
+                            0
+                          ]
+                        }
+                      },
+                      in: {
+                        _id: '$$pt._id',
+                        userId: '$$pt.userId',
+                        subscriptionId: '$$pt.subscriptionId',
+                        amount: '$$pt.price',
+                        status: '$$pt.status',
+                        method: '$$pt.paymentType',
+                        company: '$$pt.paymentCompany',
+                        currency: '$$pt.currency',
+                        createdAt: '$$pt.createdAt',
+                        updatedAt: '$$pt.updatedAt',
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            adPromotions: {
+              $map: {
+                input: '$adPromotions',
+                as: 'ap',
+                in: {
+                  _id: '$$ap._id',
+                  adId: '$$ap.adId',
+                  promotedBy: '$$ap.promotedBy',
+                  promotionPlan: '$$ap.promotionPlan',
+                  startDate: '$$ap.promotionStartDate',
+                  endDate: '$$ap.promotionEndDate',
+                  payment: {
+                    $let: {
+                      vars: {
+                        pt: {
+                          $arrayElemAt: [
+                            {
+                              $filter: {
+                                input: '$adPromotionsPaymentTransactions',
+                                as: 'pt',
+                                cond: {
+                                  $eq: ['$$pt.adPromotion', '$$ap._id']
+                                }
+                              }
+                            },
+                            0
+                          ]
+                        }
+                      },
+                      in: {
+                        _id: '$$pt._id',
+                        adpromotionId: '$$pt.adpromotionId',
+                        userId: '$$pt.userId',
+                        status: '$$pt.status',
+                        amount: '$$pt.price',
+                        method: '$$pt.paymentType',
+                        company: '$$pt.paymentCompany',
+                        currency: '$$pt.currency',
+                        createdAt: '$$pt.createdAt',
+                        updatedAt: '$$pt.updatedAt',
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]);
+  
+      if (!userPaymentDetails.length) {
+        throw new NotFoundException('User not found');
+      }
+  
+      return userPaymentDetails[0];
+    } catch (error) {
+      console.error('Error in getUserPaymentDetails:', error);
+      throw error;
+    }
+  }
+  
+
+  async getUserList(    query: GetUserListQueryDto,
     skip: number,
     currentLimit: number,
   ): Promise<{
@@ -342,6 +542,7 @@ export class UserStore {
                 password: 0,
                 ads: 0,
                 blockedUsers: 0,
+                subscriptions: 0,
               },
             },
           ],

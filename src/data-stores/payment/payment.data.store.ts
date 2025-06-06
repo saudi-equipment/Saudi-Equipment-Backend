@@ -6,6 +6,10 @@ import { ISubscription } from 'src/interfaces/payment/subscription.interface';
 import { IUser } from 'src/interfaces/user';
 import * as moment from 'moment';
 import { CommonQueryDto } from 'src/common/dtos';
+import { IPaymentTransaction } from 'src/interfaces/payment/payment.transaction.interface';
+import { IAdPromotion } from 'src/interfaces/ad.promotion/ad.promotion.interface';
+import { PromoteAdDto } from 'src/payment/dtos/promote-ad.dto';
+import { SubscriptionDto } from 'src/payment/dtos/create-subscription.dto';
 
 @Injectable()
 export class PaymentStore {
@@ -13,6 +17,9 @@ export class PaymentStore {
     @InjectModel('User') private userModel: Model<IUser>,
     @InjectModel('Subscription')
     private subscriptionModel: Model<ISubscription>,
+    @InjectModel('AdPromotion') private adPromotionModel: Model<IAdPromotion>,
+    @InjectModel('PaymentTransaction')
+    private paymentTransactionModel: Model<IPaymentTransaction>,
     @InjectModel('Ad') private adModel: Model<IAd>,
   ) {}
 
@@ -22,16 +29,15 @@ export class PaymentStore {
     });
   }
 
-  async createOrUpdateSubscription(payload: any) {
+  async createSubscription(payload: SubscriptionDto) {
     try {
       const {
-        id: transactionId,
+        id,
         invoice_id,
         price,
         created_at,
         userId,
         plan,
-        duration,
         paymentType,
         paymentCompany,
       } = payload;
@@ -50,61 +56,53 @@ export class PaymentStore {
           throw new Error('Invalid subscription plan');
       }
 
-      const existingSubscription = await this.subscriptionModel.findOne({
+      const subscription = new this.subscriptionModel({
+        subscribedBy: userId,
+        transactionId: id,
         user: new Types.ObjectId(userId),
+        plan,
+        price,
+        startDate,
+        endDate,
+        subscriptionStatus: 'active',
+        invoice_id,
+        paymentType,
+        paymentCompany,
+        ...payload,
       });
 
-      let subscription;
+      await subscription.save();
 
-      if (existingSubscription) {
-        subscription = await this.subscriptionModel.findByIdAndUpdate(
-          existingSubscription._id,
-          {
-            transactionId,
-            plan,
-            price,
-            startDate,
-            endDate,
-            subscriptionStatus: 'active',
-            invoice_id,
-            duration,
-            paymentType,
-            paymentCompany,
-            ...payload,
-          },
-          { new: true },
-        );
-      } else {
-        subscription = new this.subscriptionModel({
-          subscribedBy: userId,
-          transactionId,
-          user: new Types.ObjectId(userId),
-          plan,
-          price,
-          startDate,
-          endDate,
-          subscriptionStatus: 'active',
-          invoice_id,
-          duration,
-          paymentType,
-          paymentCompany,
-          ...payload,
-        });
+      // Create payment transaction
+      const paymentTransaction = new this.paymentTransactionModel({
+        transactionId: id,
+        subscriptionId: subscription._id.toString(),
+        paymentType,
+        paymentCompany,
+        currency: 'SAR',
+        price,
+        status: payload.status,
+        subscription: subscription._id,
+        user: new Types.ObjectId(userId)
+      });
 
-        await subscription.save();
-      }
+      await paymentTransaction.save();
 
       await this.userModel.findByIdAndUpdate(
         userId,
-        { subscription: subscription._id },
+        { $push: { subscriptions: subscription._id } },
         { new: true },
       );
 
-      return subscription;
+      return {
+        subscription,
+        paymentTransaction
+      };
     } catch (error) {
       throw error;
     }
   }
+  
   async getSubscription(userId: string) {
     try {
       const subscriptionDetails = await this.subscriptionModel.aggregate([
@@ -153,7 +151,7 @@ export class PaymentStore {
       throw new Error(`Error fetching subscription: ${error.message}`);
     }
   }
-
+    
   async getAllPaymentDetails(
     skip: number,
     currentLimit: number,
@@ -224,8 +222,7 @@ export class PaymentStore {
             promotionStartDate: 1,
             promotionEndDate: 1,
             duration: 1,
-            createdAt: 1,
-            'user._id': 1,
+            createdAt: 1,            'user._id': 1,
             'user.name': 1,
             'user.phoneNumber': 1,
             'user.email': 1,
@@ -334,7 +331,7 @@ export class PaymentStore {
     }
   }
 
-  async promoteAd(payload: any) {
+  async promoteAd(payload: PromoteAdDto) {
     try {
       const {
         adId,
@@ -342,16 +339,16 @@ export class PaymentStore {
         userId,
         paymentType,
         paymentCompany,
-        transactionId,
         amount,
+        status,
       } = payload;
 
       const ad = await this.adModel.findById({ _id: adId, createdBy: userId });
       if (!ad) throw new Error('Ad not found');
 
-      if (ad.isPromoted) {
-        throw new ConflictException('Ad already promoted');
-      }
+      // if (ad.isPromoted) {
+      //   throw new ConflictException('Ad already promoted');
+      // }
 
       const currentDate = new Date();
       let promotionEndDate: Date;
@@ -370,16 +367,56 @@ export class PaymentStore {
           throw new Error('Invalid promotion plan');
       }
 
-      ad.isPromoted = true;
-      ad.promotionPlan = promotionPlan;
-      ad.promotionStartDate = currentDate;
-      ad.promotionEndDate = promotionEndDate;
-      ad.paymentCompany = paymentCompany;
-      ad.paymentType = paymentType;
-      ad.transactionId = transactionId;
-      ad.promotionPrice = amount;
-      await ad.save();
-      return ad;
+      // Create AdPromotion document
+      const adPromotion = new this.adPromotionModel({
+        adId,
+        promotionPrice: amount,
+        currency: ad.currency,
+        promotionPlan,
+        promotionStartDate: currentDate,
+        promotionEndDate,
+        promotedBy: userId,
+        user: new Types.ObjectId(userId),
+        ad: new Types.ObjectId(adId),
+      });
+
+      // Create PaymentTransaction document
+      const paymentTransaction = new this.paymentTransactionModel({
+        paymentType,
+        paymentCompany,
+        currency: ad.currency,
+        price: amount,
+        status,
+        user: new Types.ObjectId(userId),
+        adPromotion: adPromotion._id,
+        adpromotionId: adPromotion._id,
+        userId: userId
+      });
+
+      // Save all documents in a transaction
+      const session = await this.adModel.startSession();
+      session.startTransaction();
+
+      try {
+        await adPromotion.save({ session });
+        await paymentTransaction.save({ session });
+
+        // Update ad document
+        ad.isPromoted = true;
+        await ad.save({ session });
+
+        await session.commitTransaction();
+        return {
+          ad,
+          adPromotion,
+          paymentTransaction,
+        };
+      } catch (error) {
+        await session.abortTransaction();
+        throw error;
+      } finally {
+        session.endSession();
+      }
     } catch (error) {
       throw error;
     }

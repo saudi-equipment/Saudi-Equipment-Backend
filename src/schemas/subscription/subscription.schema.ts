@@ -4,9 +4,7 @@ import { User } from '../user/user.schema';
 
 @Schema({ timestamps: true })
 export class Subscription extends Document {
-  @Prop({ required: false })
-  transactionId: string;
-
+  
   @Prop({ required: false })
   subscriptionName: string;
 
@@ -15,12 +13,6 @@ export class Subscription extends Document {
 
   @Prop({ required: false })
   createdBy: string;
-
-  @Prop({ required: false })
-  paymentType: string;
-
-  @Prop({ required: false })
-  paymentCompany: string;
 
   @Prop({ required: false })
   plan: string;
@@ -34,7 +26,7 @@ export class Subscription extends Document {
   @Prop({ required: false })
   description: string;
 
-  @Prop({ type: String, enum: ['active', 'inactive'], default: 'active' })
+  @Prop({ type: String, enum: ['active', 'inactive'], default: 'inactive' })
   subscriptionStatus: string;
 
   @Prop({ required: false })

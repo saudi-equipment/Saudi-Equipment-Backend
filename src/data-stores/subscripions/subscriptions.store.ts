@@ -8,21 +8,25 @@ import {
 } from 'src/admin/subscriptions/dtos';
 import { UserRole } from 'src/enums';
 import { AdPackage } from 'src/schemas/ad';
+import { SubscriptionPlan } from 'src/schemas/subscription/subscription.plan.schema';
 import { Subscription } from 'src/schemas/subscription/subscription.schema';
 import { User } from 'src/schemas/user/user.schema';
+import { PaymentTransaction } from 'src/schemas/payment.transaction/payment.transaction.schema';
 
 @Injectable()
 export class SubscriptionStore {
   constructor(
     @InjectModel('Subscription') private subscriptionModel: Model<Subscription>,
+    @InjectModel('SubscriptionPlan') private subscriptionPlanModel: Model<SubscriptionPlan>,
     @InjectModel('AdPackage') private adPackageModel: Model<AdPackage>,
+    @InjectModel('PaymentTransaction') private paymentTransactionModel: Model<PaymentTransaction>,
   ) {}
 
   async createSubscription(
     user: User,
     payload: CreateSubscriptionDto,
-  ): Promise<Subscription> {
-    const subscription = new this.subscriptionModel({
+  ): Promise<SubscriptionPlan> {
+    const subscription = new this.subscriptionPlanModel({
       ...payload,
       createdBy: new Types.ObjectId(user.id),
     });
@@ -40,9 +44,7 @@ export class SubscriptionStore {
   ) {
     const { search, sortType, orderType } = query;
 
-    const matchStage: any = {
-      transactionId: { $in: [null, ''] },
-    };
+    const matchStage: any = {};
 
     if (search) {
       matchStage.subscriptionName = { $regex: search, $options: 'i' };
@@ -54,8 +56,7 @@ export class SubscriptionStore {
     if (orderType === 'A-Z') sortStage.subscriptionName = 1;
     else if (orderType === 'Z-A') sortStage.subscriptionName = -1;
 
-    const result = await this.subscriptionModel.aggregate([
-      { $match: matchStage },
+    const result = await this.subscriptionPlanModel.aggregate([
       {
         $facet: {
           metadata: [
@@ -123,27 +124,30 @@ export class SubscriptionStore {
     currentLimit: number,
   ) {
     const { search, sortType, orderType } = query;
-
-    const matchStage: any = {
-      transactionId: { $exists: true, $ne: null },
-    };
-
+  
+    const matchStage: any = {};
+  
     if (search) {
       matchStage.subscriptionName = { $regex: search, $options: 'i' };
     }
-
+  
     const sortStage: Record<string, any> = {};
     if (sortType === 'Newest') sortStage.createdAt = -1;
     else if (sortType === 'Oldest') sortStage.createdAt = 1;
     if (orderType === 'A-Z') sortStage.subscriptionName = 1;
     else if (orderType === 'Z-A') sortStage.subscriptionName = -1;
-
+  
     const subscribers = await this.subscriptionModel.countDocuments(matchStage);
-    const totalEarningsResult = await this.subscriptionModel.aggregate([
-      { $match: matchStage },
+    
+    const totalEarningsResult = await this.paymentTransactionModel.aggregate([
+      { 
+        $match: { 
+          status: 'paid' 
+        } 
+      },
       { $group: { _id: null, totalEarnings: { $sum: '$price' } } },
     ]);
-
+  
     const subscriptions = await this.subscriptionModel.aggregate([
       { $match: matchStage },
       {
@@ -161,10 +165,6 @@ export class SubscriptionStore {
       {
         $project: {
           _id: 1,
-          transactionId: 1,
-          subscribedBy: 1,
-          paymentType: 1,
-          paymentCompany: 1,
           subscriptionName: 1,
           plan: 1,
           duration: 1,
@@ -186,7 +186,7 @@ export class SubscriptionStore {
         },
       },
     ]);
-
+  
     return {
       subscribers,
       totalEarnings: totalEarningsResult[0]?.totalEarnings || 0,
@@ -195,15 +195,9 @@ export class SubscriptionStore {
   }
 
   async getAllSubscriptions(user: User) {
-    if (user.role === UserRole.ADMIN) return [];
+    // if (user.role === UserRole.ADMIN) return [];
 
-    return await this.subscriptionModel.aggregate([
-      {
-        $match: {
-          transactionId: { $in: [null, ''] },
-          subscriptionStatus: 'active',
-        },
-      },
+    return await this.subscriptionPlanModel.aggregate([
       { $sort: { createdAt: -1 } },
       {
         $project: {
@@ -223,13 +217,13 @@ export class SubscriptionStore {
   }
 
   async deleteSubscription(id: string) {
-    return await this.subscriptionModel.findByIdAndDelete({
+    return await this.subscriptionPlanModel.findByIdAndDelete({
       _id: new Types.ObjectId(id),
     });
   }
 
   async updateSubscription(id: string, payload: UpdateSubscriptionDto) {
-    return await this.subscriptionModel.findByIdAndUpdate(
+    return await this.subscriptionPlanModel.findByIdAndUpdate(
       { _id: new Types.ObjectId(id) },
       { $set: payload },
       { new: true },
@@ -237,7 +231,7 @@ export class SubscriptionStore {
   }
 
   async getSubscriptionById(id: string) {
-    const result = await this.subscriptionModel.aggregate([
+    const result = await this.subscriptionPlanModel.aggregate([
       {
         $match: { _id: new Types.ObjectId(id) },
       },
