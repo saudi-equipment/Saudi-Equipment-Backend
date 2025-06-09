@@ -43,78 +43,78 @@ export class SubscriptionStore {
     currentLimit: number,
   ) {
     const { search, sortType, orderType } = query;
-
+  
     const matchStage: any = {};
-
+  
     if (search) {
       matchStage.subscriptionName = { $regex: search, $options: 'i' };
     }
-
+  
     const sortStage: Record<string, any> = {};
     if (sortType === 'Newest') sortStage.createdAt = -1;
     else if (sortType === 'Oldest') sortStage.createdAt = 1;
     if (orderType === 'A-Z') sortStage.subscriptionName = 1;
     else if (orderType === 'Z-A') sortStage.subscriptionName = -1;
-
-    const result = await this.subscriptionPlanModel.aggregate([
+  
+    // First get all subscription plans
+    const subscriptionPlans = await this.subscriptionPlanModel.aggregate([
+      { $match: matchStage },
       {
-        $facet: {
-          metadata: [
-            {
-              $group: {
-                _id: null,
-                totalSubscriptions: { $sum: 1 },
-                activeSubscriptions: {
-                  $sum: {
-                    $cond: [{ $eq: ['$subscriptionStatus', 'active'] }, 1, 0],
-                  },
-                },
-                inactiveSubscriptions: {
-                  $sum: {
-                    $cond: [{ $eq: ['$subscriptionStatus', 'inactive'] }, 1, 0],
-                  },
-                },
-              },
-            },
-          ],
-          subscriptions: [
-            {
-              $sort: Object.keys(sortStage).length
-                ? sortStage
-                : { createdAt: -1 },
-            },
-            { $skip: skip },
-            { $limit: currentLimit },
-            {
-              $project: {
-                _id: 1,
-                subscriptionName: 1,
-                plan: 1,
-                duration: 1,
-                description: 1,
-                createdBy: 1,
-                subscriptionStatus: 1,
-                price: 1,
-                createdAt: 1,
-                updatedAt: 1,
-              },
-            },
-          ],
+        $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 },
+      },
+      { $skip: skip },
+      { $limit: currentLimit },
+      {
+        $project: {
+          _id: 1,
+          subscriptionName: 1,
+          plan: 1,
+          duration: 1,
+          description: 1,
+          createdBy: 1,
+          subscriptionStatus: 1,
+          price: 1,
+          createdAt: 1,
+          updatedAt: 1,
         },
       },
     ]);
-
-    const metadata = result[0]?.metadata[0] || {
-      totalSubscriptions: 0,
-      activeSubscriptions: 0,
-      inactiveSubscriptions: 0,
-    };
-
+  
+    // Get statistics from subscriptions
+    const subscriptionStats = await this.subscriptionModel.aggregate([
+      {
+        $group: {
+          _id: '$plan', // Group by plan name (assuming this matches subscriptionPlan's name)
+          totalSubscriptions: { $sum: 1 },
+          activeSubscriptions: {
+            $sum: { $cond: [{ $eq: ['$subscriptionStatus', 'active'] }, 1, 0] },
+          },
+          inactiveSubscriptions: {
+            $sum: { $cond: [{ $eq: ['$subscriptionStatus', 'inactive'] }, 1, 0] },
+          },
+        },
+      },
+    ]);
+  
+    // Get total counts for metadata
+    const [totalCounts, activeCounts, inactiveCounts] = await Promise.all([
+      this.subscriptionModel.countDocuments({}),
+      this.subscriptionModel.countDocuments({ subscriptionStatus: 'active' }),
+      this.subscriptionModel.countDocuments({ subscriptionStatus: 'inactive' }),
+    ]);
+  
+    // Merge subscription plans with their statistics
+    const enrichedPlans = subscriptionPlans.map(plan => {
+      return {
+        ...plan,
+      };
+    });
+  
     return {
-      totalSubscriptions: metadata.totalSubscriptions,
-      activeSubscriptions: metadata.activeSubscriptions,
-      inactiveSubscriptions: metadata.inactiveSubscriptions,
-      subscriptions: result[0]?.subscriptions || [],
+      totalSubscriptions: totalCounts,
+      activeSubscriptions: activeCounts,
+      inactiveSubscriptions: inactiveCounts,
+      subscriptions: enrichedPlans,
     };
   }
 

@@ -151,10 +151,10 @@ export class PaymentStore {
       throw new Error(`Error fetching subscription: ${error.message}`);
     }
   }
-    
+
   async getAllPaymentDetails(
     skip: number,
-    currentLimit: number,
+    limit: number,
     query: CommonQueryDto,
   ): Promise<{
     payments: any[];
@@ -164,148 +164,171 @@ export class PaymentStore {
     totalCount: number;
   }> {
     const { search, sortType, orderType } = query;
-
-    const baseMatch: any = {
+  
+    const match: any = {
       transactionId: { $exists: true, $ne: null },
     };
-
+  
     if (search) {
-      baseMatch.$or = [
+      match.$or = [
         { transactionId: { $regex: search, $options: 'i' } },
         { paymentType: { $regex: search, $options: 'i' } },
         { paymentCompany: { $regex: search, $options: 'i' } },
       ];
     }
-
+  
     const sortStage: Record<string, any> = {};
-
-    if (sortType === 'Newest') {
-      sortStage.createdAt = -1;
-    } else if (sortType === 'Oldest') {
-      sortStage.createdAt = 1;
-    }
-
-    if (orderType === 'A-Z') {
-      sortStage['user.name'] = 1;
-    } else if (orderType === 'Z-A') {
-      sortStage['user.name'] = -1;
-    }
-
-    const [adPayments, adCountResult, adAmountResult] = await Promise.all([
-      this.adModel.aggregate([
-        { $match: baseMatch },
-        {
-          $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 },
+    if (sortType === 'Newest') sortStage.createdAt = -1;
+    else if (sortType === 'Oldest') sortStage.createdAt = 1;
+  
+    if (orderType === 'A-Z') sortStage['user.name'] = 1;
+    else if (orderType === 'Z-A') sortStage['user.name'] = -1;
+  
+    const pipeline = [
+      { $match: match },
+      { $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+  
+      // Lookup User
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user',
         },
-        { $skip: skip },
-        { $limit: currentLimit },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'user',
-            foreignField: '_id',
-            as: 'user',
+      },
+      { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+  
+      // Lookup Subscription
+      {
+        $lookup: {
+          from: 'subscriptions',
+          localField: 'subscriptionId',
+          foreignField: '_id',
+          as: 'subscription',
+        },
+      },
+      {
+        $set: {
+          subscription: {
+            $cond: {
+              if: { $gt: [{ $size: '$subscription' }, 0] },
+              then: { $arrayElemAt: ['$subscription', 0] },
+              else: null,
+            },
           },
         },
-        { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
-        {
-          $project: {
-            transactionId: 1,
-            paymentType: 1,
-            paymentCompany: 1,
-            amount: '$promotionPrice',
-            currency: 1,
-            type: { $literal: 'ad promotion' },
-            adId: 1,
-            isPromoted: 1,
-            promotionPlan: 1,
-            promotionStartDate: 1,
-            promotionEndDate: 1,
-            duration: 1,
-            createdAt: 1,            'user._id': 1,
-            'user.name': 1,
-            'user.phoneNumber': 1,
-            'user.email': 1,
-            'user.city': 1,
+      },
+  
+      // Lookup Ad Promotion
+      {
+        $lookup: {
+          from: 'adpromotions',
+          localField: 'adPromotionId',
+          foreignField: '_id',
+          as: 'adPromotion',
+        },
+      },
+      {
+        $set: {
+          adPromotion: {
+            $cond: {
+              if: { $gt: [{ $size: '$adPromotion' }, 0] },
+              then: { $arrayElemAt: ['$adPromotion', 0] },
+              else: null,
+            },
           },
         },
-      ]),
-      this.adModel.countDocuments(baseMatch),
-      this.adModel.aggregate([
-        { $match: baseMatch },
-        { $group: { _id: null, totalAmount: { $sum: '$price' } } },
+      },
+  
+      // Determine Type
+      {
+        $addFields: {
+          type: {
+            $cond: [
+              { $ne: ['$subscription', null] },
+              'subscription',
+              {
+                $cond: [
+                  { $ne: ['$adPromotion', null] },
+                  'ad promotion',
+                  'unknown',
+                ],
+              },
+            ],
+          },
+        },
+      },
+  
+      // Projection
+      {
+        $project: {
+          transactionId: 1,
+          paymentType: 1,
+          paymentCompany: 1,
+          currency: 1,
+          price: 1,
+          status: 1,
+          createdAt: 1,
+          type: 1,
+          user: {
+            _id: 1,
+            name: 1,
+            email: 1,
+            phoneNumber: 1,
+            city: 1,
+          },
+        },
+      },
+    ];
+  
+    // Run the aggregation and totals
+    const [payments, totalCount, totals] = await Promise.all([
+      this.paymentTransactionModel.aggregate(pipeline),
+      this.paymentTransactionModel.countDocuments(match),
+      this.paymentTransactionModel.aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: {
+              $cond: [
+                { $ne: ['$subscriptionId', null] },
+                'subscription',
+                {
+                  $cond: [
+                    { $ne: ['$adPromotionId', null] },
+                    'ad promotion',
+                    'unknown',
+                  ],
+                },
+              ],
+            },
+            total: { $sum: '$price' },
+          },
+        },
       ]),
     ]);
-
-    const [
-      subscriptionPayments,
-      subscriptionCountResult,
-      subscriptionAmountResult,
-    ] = await Promise.all([
-      this.subscriptionModel.aggregate([
-        { $match: baseMatch },
-        {
-          $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 },
-        },
-        { $skip: skip },
-        { $limit: currentLimit },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'user',
-            foreignField: '_id',
-            as: 'user',
-          },
-        },
-        { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
-        {
-          $project: {
-            transactionId: 1,
-            paymentType: 1,
-            paymentCompany: 1,
-            amount: '$price',
-            currency: 1,
-            plan: '$plan',
-            duration: '$duration',
-            startDate: 1,
-            endDate: 1,
-            subscriptionStatus: '$subscriptionStatus',
-            type: { $literal: 'subscription' },
-            createdAt: 1,
-            updatedAt: 1,
-            'user._id': 1,
-            'user.name': 1,
-            'user.phoneNumber': 1,
-            'user.email': 1,
-            'user.city': 1,
-          },
-        },
-      ]),
-      this.subscriptionModel.countDocuments(baseMatch),
-      this.subscriptionModel.aggregate([
-        { $match: baseMatch },
-        { $group: { _id: null, totalAmount: { $sum: '$price' } } },
-      ]),
-    ]);
-
-    const adAmountTotal = adAmountResult[0]?.totalAmount || 0;
-    const subscriptionAmountTotal =
-      subscriptionAmountResult[0]?.totalAmount || 0;
-
-    const combinedPayments = [...adPayments, ...subscriptionPayments].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-
+  
+    let adAmountTotal = 0;
+    let subscriptionAmountTotal = 0;
+  
+    for (const item of totals) {
+      if (item._id === 'ad promotion') adAmountTotal = item.total;
+      else if (item._id === 'subscription') subscriptionAmountTotal = item.total;
+    }
+  
     return {
+      payments,
       adAmountTotal,
       subscriptionAmountTotal,
       totalAmount: adAmountTotal + subscriptionAmountTotal,
-      totalCount: adCountResult + subscriptionCountResult,
-      payments: combinedPayments,
+      totalCount,
     };
   }
-
+  
+    
   async expireUserSubscription(userId: string): Promise<void> {
     try {
       const currentDate = new Date();

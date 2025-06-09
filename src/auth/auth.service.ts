@@ -21,6 +21,7 @@ import { IUser } from 'src/interfaces/user';
 import { hashPassword, validatePassword } from 'src/utils';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
 import { ChangeAdminPasswordDto } from './dtos/change.admin.password.dto';
+import { OneSignalService } from 'src/onesignal/onesignal.service';
 
 @Injectable()
 export class AuthService {
@@ -29,6 +30,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly otpService: OtpService,
     private readonly digitalOceanService: DigitalOceanService,
+    private readonly oneSignalService: OneSignalService,
   ) {}
 
   async signUp(payload: SignUpDto) {
@@ -75,7 +77,10 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
 
     user.password = undefined;
+    
+    const addedUser = await this.oneSignalService.addUserToOneSignal(user.email);
 
+    console.log("Onsignal Added User",addedUser);
     return {
       token,
       otpId: null,
@@ -106,7 +111,8 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
 
     user.password = undefined;
-
+    
+    await this.oneSignalService.addUserToOneSignal(user.email)
     return {
       token,
       otpId: null,

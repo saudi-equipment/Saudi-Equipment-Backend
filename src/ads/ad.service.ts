@@ -1,9 +1,7 @@
 import { User } from '../schemas/user/user.schema';
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -18,12 +16,18 @@ import { getPagination } from 'src/utils/pagination.helper';
 import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
 import { checkDuplicateImages, generateAdId } from 'src/utils';
 import { generateTransactionId } from 'src/utils/generate.transaction.id.helper';
+import { UserStore } from 'src/data-stores/user/user.store';
+import { PushNotificationType } from 'src/notification/dtos/push.notification.type';
+import { NotificationService } from 'src/notification/notification.service';
+import { OneSignalService } from 'src/onesignal/onesignal.service';
 
 @Injectable()
 export class AdService {
   constructor(
     private readonly adStore: AdStore,
     private readonly digitalOceanService: DigitalOceanService,
+    private readonly userStore: UserStore,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async createAd(
@@ -63,6 +67,22 @@ export class AdService {
           uploadedUrls,
           transactionId,
         );
+
+        const users = await this.userStore.findAllUsers();
+        
+        // console.log(users.map((id) => id.id));
+        const notificationPayload = {
+          id: users.map((id) => id.id),
+          email: users.map((email) => email.email),
+          type: PushNotificationType.ADPUBLISH,
+        };
+        
+        await this.notificationService.sendNotification(
+          notificationPayload,
+          `New Ad Published by ${user.name}`,
+          `A new ad is now available for you`,
+        );
+
         return data;
       } else {
         const uploadedUrls = await Promise.all(

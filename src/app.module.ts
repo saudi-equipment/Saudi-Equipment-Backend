@@ -15,6 +15,7 @@ import { NewsletterModule } from './newsletter/newsletter.module';
 import { MoyasarModule } from './moyasar/moyasar.module';
 import { BannerAdModule } from './google.ad/banner.ad.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { OneSignalModule } from './onesignal/onesignal.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     MoyasarModule,
     BannerAdModule,
     DashboardModule,
+    OneSignalModule,
   ],
   controllers: [AppController],
   providers: [AppService],

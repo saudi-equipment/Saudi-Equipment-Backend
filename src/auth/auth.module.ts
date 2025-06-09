@@ -15,13 +15,14 @@ import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
 import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { AdModule } from 'src/ads/ad.module';
 import { PaymentModule } from 'src/payment/payment.module';
+import { OneSignalModule } from 'src/onesignal/onesignal.module';
 
 @Module({
   imports: [
     forwardRef(() => UserModule),
     forwardRef(() => NotificationModule),
     forwardRef(() => DigitalOceanModule),
-    AdModule, PaymentModule,
+    AdModule, PaymentModule, OneSignalModule,
     ConfigModule.forRoot({ isGlobal: true }),
     PassportModule,
     MongooseModule.forFeature([{ name: 'Otp', schema: otpSchema }]),

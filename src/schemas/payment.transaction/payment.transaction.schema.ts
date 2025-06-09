@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Types, Document } from "mongoose";
-import { Subscription } from "../subscription/subscription.schema";
 import { User } from "../user/user.schema";
 import { AdPromotion } from "../ad/ad.promotion.schema";
 
@@ -8,6 +7,9 @@ import { AdPromotion } from "../ad/ad.promotion.schema";
 export class PaymentTransaction {
   @Prop({ required: false })
   adpromotionId: string;
+  
+  @Prop({ required: true })
+  transactionId: string;
 
   @Prop({ required: false })
   subscriptionId: string;

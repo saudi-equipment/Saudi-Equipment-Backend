@@ -147,12 +147,18 @@ export class UserStore {
   async findById(id: string): Promise<IUser | null> {
     const user = await this.userModel
       .findById(id)
-      .select('-ads -paymentTransactions -adPromotions -blockedUsers')
+      .select('-ads -adPromotions -blockedUsers')
       .select('-__v')
       .populate({
         path: 'subscriptions',
         select: '-__v',
         match: { subscriptionStatus: 'active' },
+        options: { limit: 1 }
+      })
+      .populate({
+        path: 'paymentTransactions',
+        select: '-__v',
+        match: { status: 'paid' },
         options: { limit: 1 }
       })
       .exec();
@@ -829,4 +835,9 @@ export class UserStore {
       admins: result[0]?.admins || [],
     };
   }
+
+  async findAllUsers(): Promise<User[]> {
+    return this.userModel.find({isDeleted: false, role: { $ne: UserRole.USER }, isActive: true}).select('-password').exec();
+  }
+
 }
