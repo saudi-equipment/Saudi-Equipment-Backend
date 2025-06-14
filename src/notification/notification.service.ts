@@ -3,9 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as nodemailer from 'nodemailer';
 import { ContactUsDto } from 'src/newsletter/dtos/contact.us.dto';
-import { NotificationPayloadDto, PushNotificationType } from './dtos/push.notification.type';
-import { NotificationByDeviceBuilder } from 'onesignal-api-client-core';
 import { OneSignalService } from 'onesignal-api-client-nest';
+import { User } from 'src/schemas/user/user.schema';
+import { Ad } from 'src/schemas/ad/ad.schema';
+import { IAd } from 'src/interfaces/ads';
 
 @Injectable()
 export class NotificationService {
@@ -123,62 +124,52 @@ export class NotificationService {
     }
   }
 
-  async sendNotification(payload: any, subtitle?: string, content?: string) {
-    const notificationPayload: NotificationPayloadDto  = {
-      userIds: payload.id,
-      title: 'Saudi-Equipment',
-      subtitle: subtitle,
-      content: content,
-      type: payload.type,
-      data: {
-        email: payload.email,
-      },
-    };
-    return await this.sendPushNotification(
-      notificationPayload,
-    );
-  }
-
-  async sendPushNotification(payload: NotificationPayloadDto) {
+  async sendAdNotificationToAllSubscribed(user: User, adDetails: any): Promise<void> {
     try {
-      if (payload.data.email) {
-        const userIds = Array.isArray(payload.userIds)
-          ? payload.userIds
-          : [payload.userIds];
-        const type = payload.type || PushNotificationType.ADPUBLISH;
-        const input = new NotificationByDeviceBuilder()
-          .setIncludeExternalUserIds(userIds)
-          .notification()
-          .setHeadings({ en: payload.title })
-          .setSubtitle({ en: payload.subtitle })
-          .setContents({ en: payload.content })
-          .setContentAvailable(payload.content !== null)
-          .setPlatform({
-            isIos: true,
-            isAndroid: true,
-            isAnyWeb: true,
-          })
-          .setAppearance({
-            ios_badgeCount: +1,
-            apns_alert: {
-              body: payload.content,
-            },
-          })
+      const notification: any = {
+        app_id: this.configService.get<string>('ONESIGNAL_APP_ID'),
+        included_segments: ['Subscribed Users'], // or 'All' if not using segments
+  
+        // Message content
+        headings: { en: `New Ad from ${user.name}` },
+        contents: { en: adDetails.titleAr },
+  
+        // Custom Data Payload
+        data: {
+          adId: adDetails.adId,
+          type: 'NEW_AD',
+          userId: user.id
+        },
+  
+        // Platform-specific tweaks
+        ios_badgeType: 'Increase',
+        ios_badgeCount: 1,
+        // android_channel_id: this.configService.get<string>('ONESIGNAL_ANDROID_CHANNEL_ID'),
+        // small_icon: 'ic_stat_onesignal_default', 
+        // large_icon: 'https://example.com/logo.png', 
+  
+        // Filters (e.g., exclude ad creator)
+        filters: [
+          {
+            field: 'user_id',
+            operator: '!=',
+            value: user.id
+          }
+        ],
+  
+        // Optional web push targeting
+        // web_push_topic: 'new-ads',
+        // url: `https://yourdomain.com/ad/${adDetails.adId}`, // Deep linking
+      };
+  
+      const result = await this.oneSignalService.createNotification(notification);
+      // console.log('Raw result:', JSON.stringify(result, null, 2));
 
-          .setAttachments({
-            data: { type },
-          })
-          .build();
-
-        const result = await this.oneSignalService.createNotification(input);
-
-        this.logger.debug('Push Notification Result: ', result);
-      } else {
-        return;
-      }
+      this.logger.debug('Notification sent:', result);
     } catch (error) {
-      this.logger.error('Exception Sending Notification: ', error.message);
-      throw new BadRequestException(error.message);
+      this.logger.error('Notification send failed', error);
+      throw error;
     }
   }
+
 }

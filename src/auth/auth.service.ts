@@ -78,9 +78,6 @@ export class AuthService {
 
     user.password = undefined;
     
-    const addedUser = await this.oneSignalService.addUserToOneSignal(user.email);
-
-    console.log("Onsignal Added User",addedUser);
     return {
       token,
       otpId: null,
@@ -112,7 +109,6 @@ export class AuthService {
 
     user.password = undefined;
     
-    await this.oneSignalService.addUserToOneSignal(user.email)
     return {
       token,
       otpId: null,

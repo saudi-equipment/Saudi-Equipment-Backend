@@ -77,11 +77,14 @@ export class AdService {
           type: PushNotificationType.ADPUBLISH,
         };
         
-        await this.notificationService.sendNotification(
-          notificationPayload,
-          `New Ad Published by ${user.name}`,
-          `A new ad is now available for you`,
-        );
+          // Send notification after ad creation is successful
+    await this.notificationService.sendAdNotificationToAllSubscribed(
+      user,
+      {
+        titleAr: payload.titleAr, // Make sure this matches your ad model
+        adId: data.adId          // Using adId from the created ad
+      }
+    );
 
         return data;
       } else {
