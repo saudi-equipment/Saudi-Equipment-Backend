@@ -43,6 +43,14 @@ export class PromoteAdDto {
   readonly paymentCompany: string;
 
   @ApiProperty({
+    description: 'The transaction ID from the payment provider',
+    example: 'txn_1234567890abcdef',
+  })
+  @IsString()
+  @IsNotEmpty()
+  readonly transactionId: string;
+
+  @ApiProperty({
     description: 'The amount paid for the promotion',
     example: 100,
   })

@@ -128,9 +128,13 @@ export class SubscriptionStore {
     const matchStage: any = {};
   
     if (search) {
-      matchStage.subscriptionName = { $regex: search, $options: 'i' };
+      matchStage.$or = [
+        { plan: { $regex: search, $options: 'i' } },
+        { duration: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
     }
-  
+    
     const sortStage: Record<string, any> = {};
     if (sortType === 'Newest') sortStage.createdAt = -1;
     else if (sortType === 'Oldest') sortStage.createdAt = 1;
@@ -170,7 +174,7 @@ export class SubscriptionStore {
           duration: 1,
           description: 1,
           createdBy: 1,
-          subscriptionStatus: 1,
+          subscriptionStatus: 1, // This will now show the actual DB value
           price: 1,
           startDate: 1,
           endDate: 1,

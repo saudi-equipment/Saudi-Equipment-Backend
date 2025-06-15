@@ -10,6 +10,7 @@ import { IPaymentTransaction } from 'src/interfaces/payment/payment.transaction.
 import { IAdPromotion } from 'src/interfaces/ad.promotion/ad.promotion.interface';
 import { PromoteAdDto } from 'src/payment/dtos/promote-ad.dto';
 import { SubscriptionDto } from 'src/payment/dtos/create-subscription.dto';
+import { async } from 'rxjs';
 
 @Injectable()
 export class PaymentStore {
@@ -243,25 +244,6 @@ export class PaymentStore {
         },
       },
   
-      // Determine Type
-      {
-        $addFields: {
-          type: {
-            $cond: [
-              { $ne: ['$subscription', null] },
-              'subscription',
-              {
-                $cond: [
-                  { $ne: ['$adPromotion', null] },
-                  'ad promotion',
-                  'unknown',
-                ],
-              },
-            ],
-          },
-        },
-      },
-  
       // Projection
       {
         $project: {
@@ -272,7 +254,6 @@ export class PaymentStore {
           price: 1,
           status: 1,
           createdAt: 1,
-          type: 1,
           user: {
             _id: 1,
             name: 1,
@@ -280,54 +261,72 @@ export class PaymentStore {
             phoneNumber: 1,
             city: 1,
           },
+          subscriptionId: {
+            $cond: [
+              { $and: [
+                { $ne: ['$subscriptionId', null] },
+                { $ne: ['$subscriptionId', ''] }
+              ]},
+              '$subscriptionId',
+              null
+            ]
+          },
+          adpromotionId: {
+            $cond: [
+              { $and: [
+                { $ne: ['$adpromotionId', null] },
+                { $ne: ['$adpromotionId', ''] }
+              ]},
+              '$adpromotionId',
+              null
+            ]
+          }
         },
       },
-    ];
-  
-    // Run the aggregation and totals
-    const [payments, totalCount, totals] = await Promise.all([
-      this.paymentTransactionModel.aggregate(pipeline),
-      this.paymentTransactionModel.countDocuments(match),
-      this.paymentTransactionModel.aggregate([
-        { $match: match },
-        {
-          $group: {
-            _id: {
-              $cond: [
-                { $ne: ['$subscriptionId', null] },
-                'subscription',
-                {
-                  $cond: [
-                    { $ne: ['$adPromotionId', null] },
-                    'ad promotion',
-                    'unknown',
-                  ],
-                },
-              ],
-            },
-            total: { $sum: '$price' },
-          },
-        },
-      ]),
-    ]);
-  
-    let adAmountTotal = 0;
-    let subscriptionAmountTotal = 0;
-  
-    for (const item of totals) {
-      if (item._id === 'ad promotion') adAmountTotal = item.total;
-      else if (item._id === 'subscription') subscriptionAmountTotal = item.total;
+    ]
+      // Run the aggregation and totals
+      const [payments, totalCount, adTotals, subscriptionTotals] = await Promise.all([
+        this.paymentTransactionModel.aggregate(pipeline),
+        this.paymentTransactionModel.countDocuments(match),
+        // Get ad promotion totals separately
+        this.paymentTransactionModel.aggregate([
+          { $match: match },
+          { $match: { adpromotionId: { $ne: null } } },
+          {
+            $group: {
+              _id: 'adpromotion',
+              total: { $sum: '$price' },
+              count: { $sum: 1 }
+            }
+          }
+        ]),
+        // Get subscription totals separately
+        this.paymentTransactionModel.aggregate([
+          { $match: match },
+          { $match: { subscriptionId: { $ne: null } } },
+          {
+            $group: {
+              _id: 'subscription',
+              total: { $sum: '$price' },
+              count: { $sum: 1 }
+            }
+          }
+        ])
+      ]);
+
+      const adTotal = adTotals.length ? adTotals[0].total : 0;
+      const subscriptionTotal = subscriptionTotals.length ? subscriptionTotals[0].total : 0;
+
+      return {
+        payments,
+        adAmountTotal: adTotal,
+        subscriptionAmountTotal: subscriptionTotal,
+        totalAmount: adTotal + subscriptionTotal,
+        totalCount,
+      };
+    } catch (error) {
+      throw error;
     }
-  
-    return {
-      payments,
-      adAmountTotal,
-      subscriptionAmountTotal,
-      totalAmount: adAmountTotal + subscriptionAmountTotal,
-      totalCount,
-    };
-  }
-  
     
   async expireUserSubscription(userId: string): Promise<void> {
     try {
@@ -364,6 +363,7 @@ export class PaymentStore {
         paymentCompany,
         amount,
         status,
+        transactionId,
       } = payload;
 
       const ad = await this.adModel.findById({ _id: adId, createdBy: userId });
@@ -405,6 +405,7 @@ export class PaymentStore {
 
       // Create PaymentTransaction document
       const paymentTransaction = new this.paymentTransactionModel({
+        transactionId,
         paymentType,
         paymentCompany,
         currency: ad.currency,

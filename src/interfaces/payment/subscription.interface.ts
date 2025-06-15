@@ -7,7 +7,7 @@ export interface ISubscription {
   subscribedBy?: string;
   plan: string;
   duration?: string;
-  status?: 'active' | 'inactive';
+  subscriptionStatus?: 'active' | 'inactive';
   price: number;
   user?: User;
   startDate: Date,
