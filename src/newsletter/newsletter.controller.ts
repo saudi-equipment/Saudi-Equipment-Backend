@@ -71,4 +71,11 @@ export class NewsletterController {
       message: 'inquery deleted successfully',
     };
   }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get(':id')
+  async getContactById(@Param('id') id: string) {
+    return await this.newsLetterService.getContactById(id);
+  }
 }

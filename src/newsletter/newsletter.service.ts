@@ -61,4 +61,16 @@ export class NewsletterService {
       throw error;
     }
   }
+
+  async getContactById(id: string) {
+    try {
+      const contact = await this.newsLetterStore.getContactById(id);
+      if (!contact) {
+        throw new NotFoundException('Contact not found');
+      }
+      return contact;
+    } catch (error) {
+      throw error;
+    }
+  }
 }

@@ -78,6 +78,7 @@ export class NewsLetterStore {
                 email: 1,
                 city: 1,
                 inquiryType: 1,
+                attachmentUrl: 1,
                 subject: 1,
                 message: 1,
                 createdAt: 1,
@@ -104,5 +105,9 @@ export class NewsLetterStore {
       totalQueries: result[0]?.totalQueries || 0,
       queries: result[0]?.queries || [],
     };
+  }
+
+  async getContactById(id: string): Promise<IContactUs> {
+    return await this.contactUsModel.findById(id);
   }
 }
