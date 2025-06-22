@@ -10,17 +10,24 @@ import { PaymentStore } from 'src/data-stores/payment/payment.data.store';
 import { AdModule } from 'src/ads/ad.module';
 import { UserModule } from 'src/user/user.module';
 import { MoyasarModule } from 'src/moyasar/moyasar.module';
+import { adPromotionSchema } from 'src/schemas/ad/ad.promotion.schema';
+import { paymentTransactionSchema } from 'src/schemas/payment.transaction/payment.transaction.schema';
+import { SubscriptionsModule } from 'src/admin/subscriptions/subscriptions.module';
+
 
 @Module({
   imports: [
     forwardRef(() => WebhooksModule),
     forwardRef(() => AdModule),
     forwardRef(() => UserModule),
+    forwardRef(() => SubscriptionsModule),
     MoyasarModule,
     MongooseModule.forFeature([
       { name: 'Subscription', schema: subscriptionSchema },
       { name: 'User', schema: userSchema },
       { name: 'Ad', schema: adsSchema },
+      { name: 'AdPromotion', schema: adPromotionSchema },
+      { name: 'PaymentTransaction', schema: paymentTransactionSchema },
     ]),
   ],
   providers: [PaymentService, PaymentStore],

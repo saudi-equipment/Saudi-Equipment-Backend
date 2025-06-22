@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, now, Types } from 'mongoose';
 import { User } from '../user/user.schema';
+import { AdPromotion } from './ad.promotion.schema';
 @Schema({ timestamps: true })
 export class Ad extends Document {
   @Prop({ required: true })
@@ -27,9 +28,6 @@ export class Ad extends Document {
   @Prop({ required: true })
   price: string;
 
-  @Prop({ required: false })
-  promotionPrice: string;
-
   @Prop({ required: true })
   currency: string;
 
@@ -48,26 +46,8 @@ export class Ad extends Document {
   @Prop({ required: false })
   duration: string;
 
-  @Prop({ required: false })
-  paymentType: string;
-
-  @Prop({ required: false })
-  paymentCompany: string;
-
-  @Prop({ required: false })
-  transactionId: string;
-
   @Prop({ required: true, default: false })
   isPromoted: boolean;
-
-  @Prop({ required: false, enum: ['7days', '15days', '30days'] })
-  promotionPlan: string;
-
-  @Prop({ type: Date, required: false })
-  promotionStartDate: Date;
-
-  @Prop({ type: Date, required: false })
-  promotionEndDate: Date;
 
   @Prop({ required: true, default: false })
   isRenew: boolean;
@@ -89,6 +69,9 @@ export class Ad extends Document {
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: false })
   user: User;
+
+  @Prop({ type: Types.ObjectId, ref: 'AdPromotion', required: false })
+  adPromotion: AdPromotion;
 }
 
 export const adsSchema = SchemaFactory.createForClass(Ad);

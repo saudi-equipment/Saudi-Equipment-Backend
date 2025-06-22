@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
 import { User } from "../user/user.schema";
 import { Ad } from "./ad.schema";
+import { AdPackage } from "./ad.package.schema";
 
 @Schema({ timestamps: true })
 export class AdPromotion extends Document {
@@ -31,6 +32,9 @@ export class AdPromotion extends Document {
 
     @Prop({ type: Types.ObjectId, ref: 'Ad', required: false })
     ad: Ad;
+
+    @Prop({ type: Types.ObjectId, ref: 'AdPackage', required: false })
+    adPackage: AdPackage;
 }
  
 export const adPromotionSchema = SchemaFactory.createForClass(AdPromotion);

@@ -193,9 +193,9 @@ export class UserService {
         await this.userStore.activateOrDeactivateAccount(user);
       updatedUser.password = undefined;
       updatedUser.ads = undefined;
-      updatedUser.subscription = undefined;
+      updatedUser.subscriptions = undefined;
       return updatedUser;
-    } catch (error) {
+    } catch (error) { 
       throw error;
     }
   }
@@ -234,6 +234,14 @@ export class UserService {
       statusCode: HttpStatus.OK,
       message: 'User account is active.',
     };
+  }
+
+  async getUserPaymentDetails(user: User) {
+    try {
+      return await this.userStore.getUserPaymentDetails(user);
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getUserList(query: GetUserListQueryDto) {

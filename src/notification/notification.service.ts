@@ -1,8 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as nodemailer from 'nodemailer';
 import { ContactUsDto } from 'src/newsletter/dtos/contact.us.dto';
+import { OneSignalService } from 'onesignal-api-client-nest';
+import { User } from 'src/schemas/user/user.schema';
+import { Ad } from 'src/schemas/ad/ad.schema';
+import { IAd } from 'src/interfaces/ads';
 
 @Injectable()
 export class NotificationService {
@@ -10,8 +14,12 @@ export class NotificationService {
   private apiKey: string;
   private sender: string;
   private transporter: nodemailer.Transporter;
+  private readonly logger = new Logger(NotificationService.name);
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly oneSignalService: OneSignalService,
+  ) {
     this.smsApiUrl = this.configService.get<string>('TAQNYAT_SMS_API_URL');
     this.apiKey = this.configService.get<string>('TAQNYAT_API_KEY');
     this.sender = this.configService.get<string>('SENDER');
@@ -115,4 +123,53 @@ export class NotificationService {
       throw error;
     }
   }
+
+  async sendAdNotificationToAllSubscribed(user: User, adDetails: any): Promise<void> {
+    try {
+      const notification: any = {
+        app_id: this.configService.get<string>('ONESIGNAL_APP_ID'),
+        included_segments: ['Subscribed Users'], // or 'All' if not using segments
+  
+        // Message content
+        headings: { en: `New Ad from ${user.name}` },
+        contents: { en: adDetails.titleAr },
+  
+        // Custom Data Payload
+        data: {
+          adId: adDetails.adId,
+          type: 'NEW_AD',
+          userId: user.id
+        },
+  
+        // Platform-specific tweaks
+        ios_badgeType: 'Increase',
+        ios_badgeCount: 1,
+        // android_channel_id: this.configService.get<string>('ONESIGNAL_ANDROID_CHANNEL_ID'),
+        // small_icon: 'ic_stat_onesignal_default', 
+        // large_icon: 'https://example.com/logo.png', 
+  
+        // Filters (e.g., exclude ad creator)
+        filters: [
+          {
+            field: 'user_id',
+            operator: '!=',
+            value: user.id
+          }
+        ],
+  
+        // Optional web push targeting
+        // web_push_topic: 'new-ads',
+        // url: `https://yourdomain.com/ad/${adDetails.adId}`, // Deep linking
+      };
+  
+      const result = await this.oneSignalService.createNotification(notification);
+      // console.log('Raw result:', JSON.stringify(result, null, 2));
+
+      this.logger.debug('Notification sent:', result);
+    } catch (error) {
+      this.logger.error('Notification send failed', error);
+      throw error;
+    }
+  }
+
 }

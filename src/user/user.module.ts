@@ -13,6 +13,7 @@ import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
 import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { subscriptionSchema } from 'src/schemas/subscription/subscription.schema';
 import { SubscriptionsModule } from 'src/admin/subscriptions/subscriptions.module';
+import { paymentTransactionSchema } from 'src/schemas/payment.transaction/payment.transaction.schema';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { SubscriptionsModule } from 'src/admin/subscriptions/subscriptions.modul
       { name: 'User', schema: userSchema },
       { name: 'Ad', schema: adsSchema },
       { name: 'Subscription', schema: subscriptionSchema },
+      { name: 'PaymentTransaction', schema: paymentTransactionSchema },
     ]),
   ],
   providers: [UserService, UserStore, ExpireAdsMiddleware],

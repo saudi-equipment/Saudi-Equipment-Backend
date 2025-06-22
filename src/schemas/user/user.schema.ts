@@ -3,6 +3,8 @@ import { Document, Types } from 'mongoose';
 import { UserRole } from 'src/enums';
 import { Ad } from '../ad/ad.schema';
 import { Subscription } from '../subscription/subscription.schema';
+import { PaymentTransaction } from '../payment.transaction/payment.transaction.schema';
+import { AdPromotion } from '../ad/ad.promotion.schema';
 
 @Schema({ timestamps: true })
 export class User extends Document {
@@ -72,8 +74,14 @@ export class User extends Document {
   @Prop({ type: [Types.ObjectId], ref: 'Ad', required: false })
   ads?: Ad[];
 
-  @Prop({ type: Types.ObjectId, ref: 'Subscription', required: false })
-  subscription?: Subscription;
+  @Prop({ type: [Types.ObjectId], ref: 'Subscription', required: false })
+  subscriptions?: Subscription[];
+  
+  @Prop({ type: [Types.ObjectId], ref: 'PaymentTransaction', required: false })
+  paymentTransactions?: PaymentTransaction[];
+
+  @Prop({ type: [Types.ObjectId], ref: 'AdPromotion', required: false })
+  adPromotions?: AdPromotion[];  
 }
 
 export const userSchema = SchemaFactory.createForClass(User);

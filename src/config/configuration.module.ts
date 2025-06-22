@@ -14,6 +14,7 @@ import mongoose from 'mongoose';
         try {
           await mongoose.connect(uri);
           Logger.log('Successfully connected to database');
+          mongoose.set('strictPopulate', false);
         } catch (error) {
           Logger.error(`Failed to connect to database: ${error.message}`);
           process.exit(1);

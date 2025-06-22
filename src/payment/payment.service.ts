@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { UserService } from 'src/user/user.service';
 import { CommonQueryDto } from 'src/common/dtos';
 import { getPagination } from 'src/utils';
+import { PromoteAdDto } from './dtos/promote-ad.dto';
+import { SubscriptionDto } from './dtos/create-subscription.dto';
 
 @Injectable()
 export class PaymentService {
@@ -50,33 +52,33 @@ export class PaymentService {
     return paymentData;
   }
 
-  async createSubscription(payload: any) {
+  async createSubscription(payload: SubscriptionDto) {
     try {
-      // const existingSubscription = await this.paymentStore.existingSubscription(payload.userId);
+      const data = await this.paymentStore.createSubscription(payload);
+      
+      if (!data.subscription) {
+        throw new Error('Subscription creation failed');
+      }
 
-      // if(existingSubscription){
-      //   throw new ConflictException("Already subscribed this plan")
-      // }
-
-      const subscription =
-        await this.paymentStore.createOrUpdateSubscription(payload);
-      const user = await this.userStore.makeUserPremium(subscription.user.id);
+      const user = await this.userStore.makeUserPremium(data.subscription.user.id);
+      
       return {
-        subscription,
+        subscription: data.subscription,
         user,
+        paymentTransaction: data.paymentTransaction
       };
     } catch (error) {
       throw error;
     }
   }
 
-  async promoteAd(payload: any) {
-    try {
+  async promoteAd(payload: PromoteAdDto) {
       const promotedAd = await this.paymentStore.promoteAd(payload);
-      return promotedAd;
-    } catch (error) {
-      throw error;
-    }
+      return {
+        ad: promotedAd.ad,
+        adPromotion: promotedAd.adPromotion,
+        paymentTransaction: promotedAd.paymentTransaction,
+      };
   }
 
   async getSubscription(userId: string) {

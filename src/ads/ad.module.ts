@@ -10,12 +10,16 @@ import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
 import { reportAdSchema } from 'src/schemas/ad';
 import { PaymentModule } from 'src/payment/payment.module';
 import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
+import { NotificationModule } from 'src/notification/notification.module';
+import { OneSignalModule } from 'src/onesignal/onesignal.module';
 
 @Module({
   imports: [
     forwardRef(() => UserModule),
     forwardRef(() => DigitalOceanModule),
     forwardRef(() => PaymentModule),
+    NotificationModule,
+    OneSignalModule,
     MongooseModule.forFeature([
       { name: 'Ad', schema: adsSchema },
       { name: 'User', schema: userSchema },
