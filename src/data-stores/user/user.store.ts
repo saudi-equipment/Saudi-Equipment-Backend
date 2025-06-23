@@ -389,6 +389,14 @@ export class UserStore {
           }
         },
         {
+          $lookup: {
+            from: 'ads',
+            localField: 'adPromotions.ad',
+            foreignField: '_id',
+            as: 'ads'
+          }
+        },
+        {
           $project: {
             _id: 1,
             name: 1,
@@ -449,6 +457,51 @@ export class UserStore {
                 in: {
                   _id: '$$ap._id',
                   adId: '$$ap.adId',
+                  adDetails: {
+                    $let: {
+                      vars: {
+                        ad: {
+                          $arrayElemAt: [
+                            {
+                              $filter: {
+                                input: '$ads',
+                                as: 'ad',
+                                cond: { 
+                                  $eq: [
+                                    { $toString: '$$ad._id' }, 
+                                    { $toString: '$$ap.ad' }  // Changed from $$ap.adId to $$ap.ad
+                                  ] 
+                                }
+                              }
+                            },
+                            0
+                          ]
+                        }
+                      },
+                      in: {
+                        $cond: {
+                          if: { $ne: ['$$ad', null] },
+                          then: {
+                            _id: '$$ad._id',
+                            category: '$$ad.category',
+                            fuelType: '$$ad.fuelType',
+                            adId: '$$ad.adId',
+                            titleAr: '$$ad.titleAr',
+                            titleEn: '$$ad.titleEn',
+                            
+                            isActive: '$$ad.isActive',
+                            isPromoted: '$$ad.isPromoted',
+                            isSold: '$$ad.isSold',
+                            views: '$$ad.views',
+                            images: '$$ad.images',
+                            createdAt: '$$ad.createdAt',
+                            updatedAt: '$$ad.updatedAt'
+                          },
+                          else: null
+                        }
+                      }
+                    }
+                  },
                   promotedBy: '$$ap.promotedBy',
                   plan: '$$ap.promotionPlan',
                   startDate: '$$ap.promotionStartDate',
@@ -502,7 +555,6 @@ export class UserStore {
       throw error;
     }
   }
-  
 
   async getUserList(    query: GetUserListQueryDto,
     skip: number,

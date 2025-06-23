@@ -658,18 +658,54 @@ export class AdStore {
 
   async getMyAds(user: User): Promise<IAd[]> {
     try {
-      return this.adModel
-        .find({ createdBy: user.id })
-        .select('-transactionId')
-        .select('-paymentCompany')
-        .select('-paymentType')
-        .select('-promotionPrice')
-        .sort({ createdAt: -1 })
-        .exec();
+      return this.adModel.aggregate([
+        // 1. Match ads created by the user
+        { $match: { createdBy: user.id } },
+  
+        // 2. Lookup adPromotion for each ad
+        {
+          $lookup: {
+            from: 'adpromotions',
+            localField: '_id',
+            foreignField: 'ad',
+            as: 'adpromotion'
+          }
+        },
+        { $unwind: { path: '$adpromotion', preserveNullAndEmptyArrays: true } },
+  
+        // 3. Lookup paymentTransaction using adpromotion._id
+        {
+          $lookup: {
+            from: 'paymenttransactions',
+            localField: 'adpromotion._id',
+            foreignField: 'adPromotion',
+            as: 'paymenttransaction'
+          }
+        },
+        { $unwind: { path: '$paymenttransaction', preserveNullAndEmptyArrays: true } },
+  
+        // 4. Optional: remove unwanted fields
+        {
+          $project: {
+            '__v': 0,
+            'adpromotion.__v': 0,
+            'adpromotion.ad': 0,
+            'adpromotion.user': 0,
+            'paymenttransaction.__v': 0,
+            'paymenttransaction.adPromotion': 0,
+            'paymenttransaction.user': 0,
+            'paymenttransaction.adpromotion': 0,
+          }
+        },
+  
+        // 5. Sort by creation
+        { $sort: { createdAt: -1 } }
+      ]).exec();
     } catch (error) {
       throw error;
     }
   }
+  
 
   async deleteAd(id: string) {
     try {
