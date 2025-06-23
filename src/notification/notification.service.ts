@@ -117,7 +117,7 @@ export class NotificationService {
           </div>
         `,
       });
-
+      
       return info;
     } catch (error) {
       throw error;

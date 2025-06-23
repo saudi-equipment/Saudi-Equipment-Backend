@@ -30,7 +30,9 @@ export class NewsletterService {
         payload,
         attachmentUrl,
       );
-
+      
+      await this.notificationService.sendContactEmail(payload);
+      
       return data;
     } catch (error) {
       throw error;

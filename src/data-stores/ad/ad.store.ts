@@ -362,7 +362,17 @@ export class AdStore {
                   { titleEn: { $regex: search, $options: 'i' } },
                   { titleAr: { $regex: search, $options: 'i' } },
                   { adId: { $regex: search, $options: 'i' } },
+                  { category: { $regex: search, $options: 'i' } },
+                  { fuelType: { $regex: search, $options: 'i' } },
+                  { condition: { $regex: search, $options: 'i' } },
+                  { description: { $regex: search, $options: 'i' } },
+                  { price: { $regex: search, $options: 'i' } },
+                  { currency: { $regex: search, $options: 'i' } },
+                  { year: { $regex: search, $options: 'i' } },
+                  { city: { $regex: search, $options: 'i' } },
+                  { duration: { $regex: search, $options: 'i' } },
                   { 'userDetails.email': { $regex: search, $options: 'i' } },
+                  { 'userDetails.name': { $regex: search, $options: 'i' } },
                   {
                     'userDetails.phoneNumber': {
                       $regex: search,
