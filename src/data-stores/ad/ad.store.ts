@@ -671,30 +671,41 @@ export class AdStore {
       return this.adModel.aggregate([
         // 1. Match ads created by the user
         { $match: { createdBy: user.id } },
-  
+
         // 2. Lookup adPromotion for each ad
         {
           $lookup: {
             from: 'adpromotions',
             localField: '_id',
             foreignField: 'ad',
-            as: 'adpromotion'
-          }
+            as: 'adpromotion',
+          },
         },
         { $unwind: { path: '$adpromotion', preserveNullAndEmptyArrays: true } },
-  
-        // 3. Lookup paymentTransaction using adpromotion._id
+
+        // 3. Only perform payment transaction lookup for promoted ads
         {
           $lookup: {
             from: 'paymenttransactions',
-            localField: 'adpromotion._id',
-            foreignField: 'adPromotion',
-            as: 'paymenttransaction'
-          }
+            let: { adPromotionId: '$adpromotion._id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$adPromotion', '$$adPromotionId'] },
+                      { $ifNull: ['$$adPromotionId', false] }, // Only match if adPromotionId exists
+                    ],
+                  },
+                },
+              },
+            ],
+            as: 'paymenttransaction',
+          },
         },
         { $unwind: { path: '$paymenttransaction', preserveNullAndEmptyArrays: true } },
-  
-        // 4. Optional: remove unwanted fields
+
+        // 4. Clean up the output
         {
           $project: {
             '__v': 0,
@@ -705,17 +716,16 @@ export class AdStore {
             'paymenttransaction.adPromotion': 0,
             'paymenttransaction.user': 0,
             'paymenttransaction.adpromotion': 0,
-          }
+          },
         },
-  
+
         // 5. Sort by creation
-        { $sort: { createdAt: -1 } }
+        { $sort: { createdAt: -1 } },
       ]).exec();
     } catch (error) {
       throw error;
     }
   }
-  
 
   async deleteAd(id: string) {
     try {
