@@ -67,7 +67,7 @@ export class NotificationService {
     try {
       const info = await this.transporter.sendMail({
         from: this.configService.get<string>('SMTP_USER'),
-        to: email,
+        to: email,  
         subject: 'Email Verification From the Saudi Equipment',
         html: `
         <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">

@@ -468,9 +468,9 @@ export class AdStore {
 
       const filters: any = { isActive: true };
 
-      if (userId) {
-        filters.createdBy = { $ne: userId };
-      }
+      // if (userId) {
+      //   filters.createdBy = { $ne: userId };
+      // }
 
       const currentUser = await this.userModel
         .findById(userId)

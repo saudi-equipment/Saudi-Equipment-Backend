@@ -68,23 +68,23 @@ export class AdService {
           transactionId,
         );
 
-        const users = await this.userStore.findAllUsers();
+    //     const users = await this.userStore.findAllUsers();
         
-        // console.log(users.map((id) => id.id));
-        const notificationPayload = {
-          id: users.map((id) => id.id),
-          email: users.map((email) => email.email),
-          type: PushNotificationType.ADPUBLISH,
-        };
+    //     // console.log(users.map((id) => id.id));
+    //     const notificationPayload = {
+    //       id: users.map((id) => id.id),
+    //       email: users.map((email) => email.email),
+    //       type: PushNotificationType.ADPUBLISH,
+    //     };
         
-          // Send notification after ad creation is successful
-    await this.notificationService.sendAdNotificationToAllSubscribed(
-      user,
-      {
-        titleAr: payload.titleAr, // Make sure this matches your ad model
-        adId: data.adId          // Using adId from the created ad
-      }
-    );
+    //       // Send notification after ad creation is successful
+    // await this.notificationService.sendAdNotificationToAllSubscribed(
+    //   user,
+    //   {
+    //     titleAr: payload.titleAr, // Make sure this matches your ad model
+    //     adId: data.adId          // Using adId from the created ad
+    //   }
+    // );
 
         return data;
       } else {
