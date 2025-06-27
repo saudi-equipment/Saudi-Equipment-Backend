@@ -55,7 +55,7 @@ export class CreateAdDto {
 
   @ApiProperty({ description: 'YouTube link for the ad' })
   @IsOptional()
-  @IsUrl()
+  @IsString()
   youTubeLink?: string;
 
   @ApiProperty({ description: 'Ad feature status', type: Boolean })
