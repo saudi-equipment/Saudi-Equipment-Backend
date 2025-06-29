@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -68,6 +69,11 @@ export class OtpService {
     try {
       let otpResponse: IOtp;
       const existingUser = await this.userService.findUserByEmail(user.email);
+      
+      if (existingUser.isEmailVerified === true) {
+        throw new BadRequestException('Email is already verified');
+      }
+
       existingUser.password = undefined;
       const code = generateSixDigitCode();
       const otpExpireTime = generateExpireTime();
