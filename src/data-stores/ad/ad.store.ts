@@ -568,13 +568,17 @@ export class AdStore {
       }
 
       const promotedFilters = { ...filters, isPromoted: true };
-      const regularFilters = { ...filters, isPromoted: false, ...cityFilter };
-
+      const regularFilters = { 
+        ...filters,
+        ...(isHome ? {} : { isPromoted: false }), 
+        ...cityFilter 
+      };
+      
       const pipeline: any[] = [
         {
-          $match: {
-            $or: [promotedFilters, regularFilters],
-          },
+          $match: isPromoted 
+            ? promotedFilters   
+            : { $or: [promotedFilters, regularFilters] }  
         },
         {
           $addFields: {

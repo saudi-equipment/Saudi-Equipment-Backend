@@ -5,9 +5,7 @@ import * as nodemailer from 'nodemailer';
 import { ContactUsDto } from 'src/newsletter/dtos/contact.us.dto';
 import { OneSignalService } from 'onesignal-api-client-nest';
 import { User } from 'src/schemas/user/user.schema';
-import { Ad } from 'src/schemas/ad/ad.schema';
-import { IAd } from 'src/interfaces/ads';
-
+import * as sgMail from '@sendgrid/mail';
 @Injectable()
 export class NotificationService {
   private smsApiUrl: string;
@@ -24,18 +22,9 @@ export class NotificationService {
     this.apiKey = this.configService.get<string>('TAQNYAT_API_KEY');
     this.sender = this.configService.get<string>('SENDER');
 
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST'),
-      port: this.configService.get<string>('SMTP_PORT'),
-      secure: this.configService.get<boolean>('SMTP_SECURE'),
-      auth: {
-        user: this.configService.get<string>('SMTP_USER'),
-        pass: this.configService.get<string>('SMTP_PASS'),
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
+    this.transporter = nodemailer.createTransport(
+      sgMail.setApiKey(this.configService.get<string>('SENDGRID_API_KEY')),
+    );
   }
 
   async sendSms(phoneNumber: string, code: string) {
@@ -65,40 +54,43 @@ export class NotificationService {
 
   async sendMail(email: string, code: string) {
     try {
-      const info = await this.transporter.sendMail({
-        from: this.configService.get<string>('SMTP_USER'),
-        to: email,  
+      const msg = {
+        to: email,
+        from: 'info@saudi-equipment.com', 
         subject: 'Email Verification From the Saudi Equipment',
         html: `
-        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
-          <h2 style="color: #333; text-align: center;">Email Verification</h2>
-          <p style="font-size: 16px; color: #555; text-align: center;">
-            Thank you for verifying email! Please use the following verification code to verify your email.
-          </p>
-          <div style="text-align: center; margin: 20px 0;">
-            <span style="font-size: 24px; font-weight: bold; color: #007bff; background: #eef2ff; padding: 10px 20px; border-radius: 5px; display: inline-block;">
-              ${code}
-            </span>
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
+            <h2 style="color: #333; text-align: center;">Email Verification</h2>
+            <p style="font-size: 16px; color: #555; text-align: center;">
+              Thank you for verifying email! Please use the following verification code to verify your email.
+            </p>
+            <div style="text-align: center; margin: 20px 0;">
+              <span style="font-size: 24px; font-weight: bold; color: #007bff; background: #eef2ff; padding: 10px 20px; border-radius: 5px; display: inline-block;">
+                ${code}
+              </span>
+            </div>
+            <p style="font-size: 14px; color: #777; text-align: center;">
+              If you did not request this email, please ignore it.
+            </p>
           </div>
-          <p style="font-size: 14px; color: #777; text-align: center;">
-            If you did not request this email, please ignore it.
-          </p>
-        </div>
-      `,
-      });
-      return info;
+        `,
+      };
+
+      const response = await sgMail.send(msg);
+      this.logger.log(`Verification email sent to ${email}`);
     } catch (error) {
+      this.logger.error('Failed to send verification email', error);
       throw error;
     }
   }
 
   async sendContactEmail(contactData: ContactUsDto) {
     try {
-
-      const info = await this.transporter.sendMail({
-        from: this.configService.get<string>('SMTP_USER'),
-        to: this.configService.get<string>('SMTP_USER'),
-        subject: `${contactData.subject} (from: ${contactData.email})`,
+      const msg = {
+        to: 'info@saudi-equipment.com',
+        from: 'info@saudi-equipment.com', 
+        replyTo: contactData.email,
+        subject: `(from: ${contactData.email})`,
         html: `
           <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9;">
             <h2 style="color: #333; text-align: center;">New Contact Inquiry</h2>
@@ -116,10 +108,13 @@ export class NotificationService {
             </p>
           </div>
         `,
-      });
-      
-      return info;
+      };
+
+      await sgMail.send(msg);
+     
+      this.logger.log(`Contact form email sent from ${contactData.email}`);
     } catch (error) {
+      this.logger.error('Failed to send contact form email', error);
       throw error;
     }
   }

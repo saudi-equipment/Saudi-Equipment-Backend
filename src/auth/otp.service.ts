@@ -54,7 +54,8 @@ export class OtpService {
           otpResponse.phoneNumber,
           otpResponse.code,
         );
-        return { otpResponse, existingUser };
+      const { blockedUsers, isPremiumUser, ads, subscriptions, paymentTransactions, adPromotions, ...userWithoutSensitiveData } = existingUser.toObject();
+      return { otpResponse, existingUser: userWithoutSensitiveData };
       } else {
         throw new Error('User not found');
       }
@@ -94,7 +95,8 @@ export class OtpService {
           otpResponse.email,
           otpResponse.code,
         );
-        return { otpResponse, existingUser };
+      const { blockedUsers, isPremiumUser, ads, subscriptions, paymentTransactions, adPromotions, ...userWithoutSensitiveData } = existingUser.toObject();
+      return { otpResponse, existingUser: userWithoutSensitiveData };
       } else {
         throw new Error('User not found');
       }
