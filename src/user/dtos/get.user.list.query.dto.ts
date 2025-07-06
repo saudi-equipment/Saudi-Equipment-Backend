@@ -25,4 +25,12 @@ export class GetUserListQueryDto {
   @IsOptional()
   @IsString()
   orderType?: string;
+
+  @IsOptional()
+  @IsString()
+  premiumUsers?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
 }

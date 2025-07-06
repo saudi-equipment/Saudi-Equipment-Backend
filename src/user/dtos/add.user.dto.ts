@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { UserRole } from 'src/enums';
 
 export class AddUser {
   @ApiProperty({ description: 'The city of the user' })
@@ -14,7 +15,6 @@ export class AddUser {
   @IsEmail()
   @IsNotEmpty()
   readonly email: string;
-
   @ApiProperty({ description: 'The phone number of the user' })
   @IsString()
   @MaxLength(12)
