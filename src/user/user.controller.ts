@@ -17,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UserService } from './user.service';
-import { AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
+import { AddAdminUser, AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
 import { RolesGuard } from 'src/auth/guard/roles.gurad';
 import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
@@ -27,6 +27,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { Public } from 'src/decorators/public.routes.decorator';
 import { validateProfilePicSize } from 'src/utils';
+import { ConflictException } from '@nestjs/common';
 
 @Controller('user')
 export class UserController {
@@ -141,12 +142,48 @@ export class UserController {
   @Post('add-user')
   async addUserByAdmin(@Body() payload: AddUser) {
     try {
-      this.userService.findExistingUser(payload.email);
-    this.userService.findExistingUserByNumber(payload.phoneNumber);
-    return await this.userService.addUserByAdmin(payload);
+      const existingEmail = await this.userService.findExistingUser(payload.email);
+      if (existingEmail) {
+        throw new ConflictException('Email already exists');
+      }
+      
+      const existingPhone = await this.userService.findExistingUserByNumber(payload.phoneNumber);
+      if (existingPhone) {
+        throw new ConflictException('Phone number already exists');
+      }
+      
+      return await this.userService.addUserByAdmin(payload);
     } catch (error) {
       throw error;
     }
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('add-admin')
+  async addAdmin(@Body() payload: AddAdminUser) {
+    try {
+      const existingEmail = await this.userService.findExistingUser(payload.email);
+      if (existingEmail) {
+        throw new ConflictException('Email already exists');
+      }
+      
+      const existingPhone = await this.userService.findExistingUserByNumber(payload.phoneNumber);
+      if (existingPhone) {
+        throw new ConflictException('Phone number already exists');
+      }
+      
+      return await this.userService.addAdmin(payload);
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('admin-list')
+  async getAdminList(@Query() query: GetUserListQueryDto) {
+    return await this.userService.getAdminList(query);
   }
 
   @Post('block/:userId')

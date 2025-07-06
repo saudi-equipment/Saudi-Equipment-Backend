@@ -312,16 +312,17 @@ export class AdStore {
     limit: number,
     query: GetAllAdQueryDto,
   ) {
-    const { search, sortType, adStatus, orderType, isPromoted } = query;
+    console.log("query-------------------------------",query);
+    const { search, sortType, adStatus, orderType, isPromoted, category, condition, fuelType, city } = query;
 
     const baseFilters: any = { isActive: { $in: [true, false] } };
 
-    if (adStatus !== undefined) {
-      baseFilters.isActive = adStatus === 'true';
+    if (adStatus) {
+      baseFilters.isActive = adStatus;
     }
 
     if (isPromoted) {
-      baseFilters.isPromoted = true;
+      baseFilters.isPromoted = isPromoted;
     }
 
     const sortStage: Record<string, any> = {};
@@ -338,6 +339,22 @@ export class AdStore {
       sortStage.titleEn = -1;
     }
 
+    if (category) {
+      baseFilters.category = category;
+    }
+
+    if (condition) {
+      baseFilters.condition = condition;
+    }
+
+    if (fuelType) {
+      baseFilters.fuelType = fuelType;
+    }
+    
+    if (city) {
+      baseFilters.city = city;
+    }
+    
     const result = await this.adModel.aggregate([
       { $match: baseFilters },
       {

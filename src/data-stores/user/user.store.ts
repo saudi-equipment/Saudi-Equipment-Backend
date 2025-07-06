@@ -556,7 +556,7 @@ export class UserStore {
     }
   }
 
-  async getUserList(    query: GetUserListQueryDto,
+  async getUserList( query: GetUserListQueryDto,
     skip: number,
     currentLimit: number,
   ): Promise<{
@@ -567,6 +567,7 @@ export class UserStore {
     premiumUsers: number;
   }> {
     const { search, sortType, orderType } = query;
+    console.log("query--------------------",query.premiumUsers);
 
     const matchStage: any = {
       isDeleted: false,
@@ -596,6 +597,15 @@ export class UserStore {
       sortStage.name = -1;
     }
 
+
+    if (query.premiumUsers) {
+      matchStage.isPremiumUser = query.premiumUsers === 'true';
+    }
+    
+    if (query.city) {
+      matchStage.city = query.city;
+    }
+    
     const aggregationPipeline = [
       { $match: matchStage },
       { $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 } },
@@ -634,7 +644,7 @@ export class UserStore {
     ];
 
     const result = await this.userModel.aggregate(aggregationPipeline).exec();
-
+    
     return {
       totalUsers: result[0].totalUsers || 0,
       activeUsers: result[0].activeUsers || 0,
@@ -653,6 +663,7 @@ export class UserStore {
     total: number;
     totalPages: number;
   }> {
+    console.log("query--------------------",query);
     const { search, sortType, orderType } = query;
 
     const matchStage: any = {

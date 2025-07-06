@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsOptional, IsInt, Min, IsString, IsNotEmpty} from 'class-validator';
+import { IsOptional, IsInt, Min, IsString } from 'class-validator';
 
 export class GetSubscriptionListQueryDto {
   @IsOptional()
@@ -25,4 +25,12 @@ export class GetSubscriptionListQueryDto {
   @IsOptional()
   @IsString()
   orderType?: string;
+
+  @IsOptional()
+  @IsString()
+  active?: 'true' | 'false';
+
+  @IsOptional()
+  @IsString()
+  inactive?: 'true' | 'false';
 }

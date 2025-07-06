@@ -48,12 +48,7 @@ export class UserService {
   }
 
   async findExistingUserByNumber(phoneNumber: string): Promise<IUser | null> {
-    const user =
-      await this.userStore.findExistingUserByPhoneNumber(phoneNumber);
-    if (user) {
-      throw new ConflictException('Phone number is already exist');
-    }
-    return user;
+    return await this.userStore.findExistingUserByPhoneNumber(phoneNumber);
   }
 
   async updatePassword(hashedPassword: string, phoneNumber: string) {
@@ -83,7 +78,7 @@ export class UserService {
   async findExistingUser(email: string): Promise<IUser | null> {
     const user = await this.userStore.findExistingUser(email);
     if (user) {
-      throw new ConflictException('Email is already exist');
+      throw new HttpException('Email is already exist', HttpStatus.BAD_REQUEST);
     }
     return user;
   }
