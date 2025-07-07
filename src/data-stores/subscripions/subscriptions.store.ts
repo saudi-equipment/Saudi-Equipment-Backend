@@ -47,23 +47,44 @@ export class SubscriptionStore {
     const matchStage: any = {};
   
     if (search) {
-      matchStage.subscriptionName = { $regex: search, $options: 'i' };
+      matchStage.$or = [
+        { subscriptionName: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
     }
   
     const sortStage: Record<string, any> = {};
+    
+    // Handle sorting
     if (sortType === 'Newest') sortStage.createdAt = -1;
     else if (sortType === 'Oldest') sortStage.createdAt = 1;
-    if (orderType === 'A-Z') sortStage.subscriptionName = 1;
-    else if (orderType === 'Z-A') sortStage.subscriptionName = -1;
+    else if (sortType === 'Name') {
+      sortStage.subscriptionName = orderType === 'A-Z' ? 1 : -1;
+    } else if (sortType === 'Price') {
+      sortStage.price = orderType === 'A-Z' ? 1 : -1;
+    } else {
+      // Default sort by newest
+      sortStage.createdAt = -1;
+    }
   
-    // First get all subscription plans
+    // Get total count for pagination
+    const totalCount = await this.subscriptionPlanModel.countDocuments(matchStage);
+    
+    // Get paginated subscription plans
     const subscriptionPlans = await this.subscriptionPlanModel.aggregate([
       { $match: matchStage },
-      {
-        $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 },
-      },
+      { $sort: sortStage },
       { $skip: skip },
       { $limit: currentLimit },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'createdBy',
+          foreignField: '_id',
+          as: 'createdByUser',
+        },
+      },
+      { $unwind: { path: '$createdByUser', preserveNullAndEmptyArrays: true } },
       {
         $project: {
           _id: 1,
@@ -71,49 +92,58 @@ export class SubscriptionStore {
           plan: 1,
           duration: 1,
           description: 1,
-          createdBy: 1,
           subscriptionStatus: 1,
           price: 1,
+          features: 1,
+          isFeatured: 1,
           createdAt: 1,
           updatedAt: 1,
-        },
-      },
-    ]);
-  
-    // Get statistics from subscriptions
-    const subscriptionStats = await this.subscriptionModel.aggregate([
-      {
-        $group: {
-          _id: '$plan', // Group by plan name (assuming this matches subscriptionPlan's name)
-          totalSubscriptions: { $sum: 1 },
-          activeSubscriptions: {
-            $sum: { $cond: [{ $eq: ['$subscriptionStatus', 'active'] }, 1, 0] },
-          },
-          inactiveSubscriptions: {
-            $sum: { $cond: [{ $eq: ['$subscriptionStatus', 'inactive'] }, 1, 0] },
+          createdBy: {
+            _id: '$createdByUser._id',
+            name: {
+              $ifNull: [
+                '$createdByUser.name',
+                { $concat: ['$createdByUser.firstName', ' ', '$createdByUser.lastName'] },
+              ],
+            },
+            email: '$createdByUser.email',
           },
         },
       },
     ]);
   
-    // Get total counts for metadata
-    const [totalCounts, activeCounts, inactiveCounts] = await Promise.all([
-      this.subscriptionModel.countDocuments({}),
-      this.subscriptionModel.countDocuments({ subscriptionStatus: 'active' }),
-      this.subscriptionModel.countDocuments({ subscriptionStatus: 'inactive' }),
+    // Get active subscription counts for each plan
+    const activeSubscriptionCounts = await this.subscriptionModel.aggregate([
+      { $match: { 
+        subscriptionStatus: 'active',
+        plan: { $ne: null } // Ensure plan is not null
+      } },
+      { 
+        $group: { 
+          _id: '$plan', 
+          count: { $sum: 1 } 
+        } 
+      },
     ]);
-  
-    // Merge subscription plans with their statistics
+
+    const activeCountsMap = new Map(
+      activeSubscriptionCounts
+        .filter(item => item._id)
+        .map(item => [item._id.toString(), item.count])
+    );
+
     const enrichedPlans = subscriptionPlans.map(plan => {
+      const planId = plan?._id?.toString();
       return {
         ...plan,
+        activeSubscribers: planId ? (activeCountsMap.get(planId) || 0) : 0,
       };
     });
   
     return {
-      totalSubscriptions: totalCounts,
-      activeSubscriptions: activeCounts,
-      inactiveSubscriptions: inactiveCounts,
+      total: totalCount,
+      currentPage: Math.floor(skip / currentLimit) + 1,
+      totalPages: Math.ceil(totalCount / currentLimit),
       subscriptions: enrichedPlans,
     };
   }

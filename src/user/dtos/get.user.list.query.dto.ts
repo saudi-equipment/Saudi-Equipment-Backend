@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
-import { IsOptional, IsInt, Min, IsString, IsNotEmpty} from 'class-validator';
+import { IsOptional, IsInt, Min, IsString, IsNotEmpty, IsBoolean} from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class GetUserListQueryDto {
   @IsOptional()
@@ -27,8 +28,13 @@ export class GetUserListQueryDto {
   orderType?: string;
 
   @IsOptional()
-  @IsString()
-  premiumUsers?: string;
+  @Transform(({ value }) => {
+    if (value === 'true' || value === '1' || value === 'yes') return true;
+    if (value === 'false' || value === '0' || value === 'no' || value === '') return false;
+    return value;
+  })
+  @IsBoolean()
+  premiumUsers?: boolean;
 
   @IsOptional()
   @IsString()

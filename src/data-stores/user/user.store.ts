@@ -567,7 +567,6 @@ export class UserStore {
     premiumUsers: number;
   }> {
     const { search, sortType, orderType } = query;
-    console.log("query--------------------",query.premiumUsers);
 
     const matchStage: any = {
       isDeleted: false,
@@ -599,7 +598,7 @@ export class UserStore {
 
 
     if (query.premiumUsers) {
-      matchStage.isPremiumUser = query.premiumUsers === 'true';
+      matchStage.isPremiumUser = query.premiumUsers;
     }
     
     if (query.city) {
