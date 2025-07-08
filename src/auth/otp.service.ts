@@ -113,10 +113,17 @@ export class OtpService {
 
   async verifyOtp(payload: VerifyOtpDto) {
     try {
+      console.log("payload----------------------------------",payload);
       const { otpId, code, userId, email } = payload;
       const currentTime = new Date();
 
+      console.log("otpId----------------------------------",otpId);
+      console.log("code----------------------------------",code);
+      console.log("userId----------------------------------",userId);
+      console.log("email----------------------------------",email);
+
       const existingOtp = await this.otpStore.findOtpById(otpId);
+      console.log("existingOtp----------------------------------",existingOtp);
       if (!existingOtp) throw new NotFoundException('OTP not found');
       if (existingOtp.isUsed)
         throw new ForbiddenException('OTP is already used');
@@ -126,6 +133,7 @@ export class OtpService {
         throw new ForbiddenException('OTP is expired');
 
       const user = userId ? await this.userService.findUserById(userId) : null;
+      console.log("user----------------------------------",user);
       if (!user) throw new NotFoundException('User not found');
 
       if (user.phoneNumber && !user.isVerified) {
