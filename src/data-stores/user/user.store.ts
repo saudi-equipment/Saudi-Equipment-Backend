@@ -668,6 +668,7 @@ export class UserStore {
     const matchStage: any = {
       isDeleted: false,
       isActive: true,
+      role: { $ne: UserRole.ADMIN } 
     };
 
     if (search) {
@@ -704,11 +705,13 @@ export class UserStore {
             {
               $project: {
                 password: 0,
-                ads: 0,
                 blockedUsers: 0,
                 isDeleted: 0,
                 isBlocked: 0,
                 subscription: 0,
+                paymentTransactions: 0, 
+                adPromotions: 0,        
+                subscriptions: 0,       
                 __v: 0,
               },
             },
