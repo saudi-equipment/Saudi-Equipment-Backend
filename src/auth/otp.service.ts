@@ -56,7 +56,10 @@ export class OtpService {
           otpResponse.code,
         );
       const { blockedUsers, isPremiumUser, ads, subscriptions, paymentTransactions, adPromotions, ...userWithoutSensitiveData } = existingUser.toObject();
-      return { otpResponse, existingUser: userWithoutSensitiveData };
+      return { otpResponse, existingUser: {
+          ...userWithoutSensitiveData,
+          id: existingUser._id 
+        } };
       } else {
         throw new Error('User not found');
       }
@@ -113,17 +116,10 @@ export class OtpService {
 
   async verifyOtp(payload: VerifyOtpDto) {
     try {
-      console.log("payload----------------------------------",payload);
       const { otpId, code, userId, email } = payload;
       const currentTime = new Date();
 
-      console.log("otpId----------------------------------",otpId);
-      console.log("code----------------------------------",code);
-      console.log("userId----------------------------------",userId);
-      console.log("email----------------------------------",email);
-
       const existingOtp = await this.otpStore.findOtpById(otpId);
-      console.log("existingOtp----------------------------------",existingOtp);
       if (!existingOtp) throw new NotFoundException('OTP not found');
       if (existingOtp.isUsed)
         throw new ForbiddenException('OTP is already used');
@@ -132,8 +128,7 @@ export class OtpService {
       if (new Date(existingOtp.expireTime) <= currentTime)
         throw new ForbiddenException('OTP is expired');
 
-      const user = userId ? await this.userService.findUserById(userId) : null;
-      console.log("user----------------------------------",user);
+      const user = await this.userService.findUserById(userId);
       if (!user) throw new NotFoundException('User not found');
 
       if (user.phoneNumber && !user.isVerified) {

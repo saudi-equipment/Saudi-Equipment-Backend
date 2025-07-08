@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class VerifyOtpDto {
   @ApiProperty({description: 'The OTP code'})
@@ -10,6 +10,7 @@ export class VerifyOtpDto {
 
   @ApiProperty({ description: 'Id of the otp' })
   @IsString()
+  @IsNotEmpty() 
   readonly otpId: string;
 
   @ApiProperty({ description: 'Email of the user' })
@@ -19,5 +20,6 @@ export class VerifyOtpDto {
 
   @ApiProperty({ description: 'Id of the otp' })
   @IsString()
+  @IsNotEmpty()
   readonly userId: string;
 }
