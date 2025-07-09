@@ -6,6 +6,7 @@ import { EarningsReportDto } from 'src/dashboard/dtos/earning.report.dto';
 import { IAd } from 'src/interfaces/ads';
 import { ISubscription } from 'src/interfaces/payment/subscription.interface';
 import { IUser } from 'src/interfaces/user';
+import { IPaymentTransaction } from 'src/interfaces/payment/payment.transaction.interface';
 
 @Injectable()
 export class DashboardStore {
@@ -14,6 +15,7 @@ export class DashboardStore {
     @InjectModel('Subscription')
     private subscriptionModel: Model<ISubscription>,
     @InjectModel('Ad') private adModel: Model<IAd>,
+    @InjectModel('PaymentTransaction') private paymentTransactionModel: Model<IPaymentTransaction>,
   ) {}
 
   async calculateTotalMetrics() {
@@ -74,11 +76,9 @@ export class DashboardStore {
     // Total Featured Ads (all time and current period)
     const totalFeaturedAds = await this.adModel.countDocuments({
       isPromoted: true,
-      transactionId: { $exists: true, $ne: null },
     });
     const currentPeriodFeaturedAds = await this.adModel.countDocuments({
       isPromoted: true,
-      transactionId: { $exists: true, $ne: null },
       createdAt: { $gte: previousPeriodDate },
     });
 
@@ -243,35 +243,17 @@ export class DashboardStore {
   }
 
   private async calculateTotalEarnings(startDate: moment.Moment, endDate: moment.Moment): Promise<number> {
-    const promotedAds = await this.adModel.find({
-      isPromoted: true,
-      transactionId: { $exists: true, $ne: null },
-      $or: [
-        { promotionStartDate: { $gte: startDate.toDate(), $lte: endDate.toDate() } },
-        { createdAt: { $gte: startDate.toDate(), $lte: endDate.toDate() } }
-      ]
-    }).exec();
+    const transactions = await this.paymentTransactionModel.find({
+      status: 'paid',
+      createdAt: { $gte: startDate.toDate(), $lte: endDate.toDate() }
+    })
+    .populate('subscription adPromotion')
+    .exec();
 
-    const adRevenue = promotedAds.reduce((sum, ad) => {
-      if (!ad.promotionPlan) return sum;
-      switch (ad.promotionPlan) {
-        case '7days': return sum + 10;
-        case '15days': return sum + 18;
-        case '30days': return sum + 30;
-        default: return sum;
-      }
+    const totalEarnings = transactions.reduce((sum, transaction) => {
+      return sum + (transaction.price || 0);
     }, 0);
 
-    const paidSubscriptions = await this.subscriptionModel.find({
-      transactionId: { $exists: true, $ne: null },
-      $or: [
-        { startDate: { $gte: startDate.toDate(), $lte: endDate.toDate() } },
-        { createdAt: { $gte: startDate.toDate(), $lte: endDate.toDate() } }
-      ]
-    }).exec();
-
-    const subscriptionRevenue = paidSubscriptions.reduce((sum, sub) => sum + (sub.price || 0), 0);
-
-    return adRevenue + subscriptionRevenue;
+    return totalEarnings;
   }
 }

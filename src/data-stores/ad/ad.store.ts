@@ -312,7 +312,7 @@ export class AdStore {
     limit: number,
     query: GetAllAdQueryDto,
   ) {
-    console.log("query-------------------------------",query);
+    
     const { search, sortType, adStatus, orderType, isPromoted, category, condition, fuelType, city } = query;
 
     const baseFilters: any = { isActive: { $in: [true, false] } };

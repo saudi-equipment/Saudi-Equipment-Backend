@@ -397,4 +397,13 @@ export class UserService {
       throw error;
     }
   }
+
+
+  async getAllUsersToExportUsers() {
+    try {
+      return await this.userStore.findAllUsers();
+    } catch (error) {
+      throw error;
+    }
+  }
 }

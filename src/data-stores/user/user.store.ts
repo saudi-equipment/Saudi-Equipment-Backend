@@ -619,6 +619,8 @@ export class UserStore {
                 ads: 0,
                 blockedUsers: 0,
                 subscriptions: 0,
+                paymentTransactions: 0,
+                adPromotions: 0,
               },
             },
           ],
@@ -903,7 +905,20 @@ export class UserStore {
   }
 
   async findAllUsers(): Promise<User[]> {
-    return this.userModel.find({isDeleted: false, role: { $ne: UserRole.USER }, isActive: true}).select('-password').exec();
+    return this.userModel.find(
+      {
+        isDeleted: false,
+        role: { $ne: UserRole.ADMIN },
+      },
+    )
+    .select('-blockedUsers')
+    .select('-ads')
+    .select('-__v')
+    .select('-password')
+    .select('-paymentTransactions')
+    .select('-subscriptions')
+    .select('-adPromotions')
+    .exec();
   }
 
 }

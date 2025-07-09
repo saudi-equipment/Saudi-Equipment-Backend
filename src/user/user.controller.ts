@@ -37,6 +37,18 @@ export class UserController {
   ) {}
 
   @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Get('export-users')
+  async getAllUsersToExportUsers(@Res() response) {
+    try {
+      const data = await this.userService.getAllUsersToExportUsers();
+      return response.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Get('user-payment-details')
   async getUserPaymentDetails(@GetUser() user: User) {
