@@ -232,6 +232,7 @@ export class UserStore {
       };
 
       const paymentTransactionData = {
+        transactionId: generateTransactionId(),
         price: payload.price,
         paymentType: payload.paymentType,
         paymentCompany: payload.paymentCompany,
@@ -273,6 +274,7 @@ export class UserStore {
         await updatedUser.save();
 
         const newPaymentTransaction = new this.paymentTransactionModel({
+          transactionId: generateTransactionId(),
           subscription: newSubscription.id,
           user: userId,
           paymentType: payload.paymentType,
