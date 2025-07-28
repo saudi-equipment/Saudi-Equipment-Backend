@@ -34,7 +34,7 @@ export class NotificationService {
         this.smsApiUrl,
         {
           recipients: [phoneNumber],
-          body: `HEVEQ Login OTP code is ${code}`,
+          body: `Your verification code: ${code}. For login visit Heveq, don't share this code to anyone.`,
           sender: this.sender,
         },
         {
