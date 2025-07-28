@@ -29,11 +29,12 @@ export class NotificationService {
 
   async sendSms(phoneNumber: string, code: string) {
     try {
+      this.logger.log(`Sending SMS to ${phoneNumber} with code ${code}`);
       await axios.post(
         this.smsApiUrl,
         {
           recipients: [phoneNumber],
-          body: `Prolines Login OTP code is ${code}`,
+          body: `HEVEQ Login OTP code is ${code}`,
           sender: this.sender,
         },
         {
@@ -43,8 +44,9 @@ export class NotificationService {
           },
         },
       );
+      this.logger.log(`SMS sent successfully to ${phoneNumber}`);
     } catch (error) {
-      console.error(
+      this.logger.error(
         'Error sending SMS:',
         error.response?.data || error.message,
       );
