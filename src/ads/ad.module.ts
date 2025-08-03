@@ -9,10 +9,9 @@ import { userSchema } from 'src/schemas/user/user.schema';
 import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
 import { reportAdSchema } from 'src/schemas/ad';
 import { PaymentModule } from 'src/payment/payment.module';
-import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { NotificationModule } from 'src/notification/notification.module';
 import { OneSignalModule } from 'src/onesignal/onesignal.module';
-
+import { adPromotionSchema } from 'src/schemas/ad/ad.promotion.schema';
 @Module({
   imports: [
     forwardRef(() => UserModule),
@@ -24,9 +23,10 @@ import { OneSignalModule } from 'src/onesignal/onesignal.module';
       { name: 'Ad', schema: adsSchema },
       { name: 'User', schema: userSchema },
       { name: 'ReportAd', schema: reportAdSchema },
+      { name: 'AdPromotion', schema: adPromotionSchema },
     ]),
   ],
-  providers: [AdService, AdStore, ExpireAdsMiddleware],
+  providers: [AdService, AdStore],
   controllers: [AdController],
   exports: [AdStore, AdService]
 })

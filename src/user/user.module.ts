@@ -10,7 +10,6 @@ import { AdModule } from 'src/ads/ad.module';
 import { adsSchema } from 'src/schemas/ad/ad.schema';
 import { PaymentModule } from 'src/payment/payment.module';
 import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
-import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { subscriptionSchema } from 'src/schemas/subscription/subscription.schema';
 import { SubscriptionsModule } from 'src/admin/subscriptions/subscriptions.module';
 import { paymentTransactionSchema } from 'src/schemas/payment.transaction/payment.transaction.schema';
@@ -31,7 +30,7 @@ import { paymentTransactionSchema } from 'src/schemas/payment.transaction/paymen
       { name: 'PaymentTransaction', schema: paymentTransactionSchema },
     ]),
   ],
-  providers: [UserService, UserStore, ExpireAdsMiddleware],
+  providers: [UserService, UserStore],
   controllers: [UserController],
   exports: [UserService, UserStore],
 })

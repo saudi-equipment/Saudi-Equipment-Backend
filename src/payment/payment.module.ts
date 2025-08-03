@@ -32,6 +32,6 @@ import { SubscriptionsModule } from 'src/admin/subscriptions/subscriptions.modul
   ],
   providers: [PaymentService, PaymentStore],
   controllers: [PaymentController],
-  exports: [PaymentService]
+  exports: [PaymentService, PaymentStore]
 })
 export class PaymentModule {}

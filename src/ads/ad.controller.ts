@@ -30,7 +30,6 @@ import { RolesGuard } from 'src/auth/guard/roles.gurad';
 import { UserRole } from 'src/enums';
 import { Roles } from 'src/decorators/roles.decorator';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { Public } from 'src/decorators/public.routes.decorator';
 import { validateAdImagesSize } from 'src/utils';
 
@@ -38,7 +37,6 @@ import { validateAdImagesSize } from 'src/utils';
 export class AdController {
   constructor(
     private readonly adService: AdService,
-    private readonly expireAdsMiddleware: ExpireAdsMiddleware,
   ) {}
 
   @UseGuards(RolesGuard)
@@ -52,7 +50,6 @@ export class AdController {
     @Param('adId') adId: string,
   ) {
     try {
-      await this.expireAdsMiddleware.use(req, response, () => {});
       const data = await this.adService.reportAd(adId, userId, payload);
       return response.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -83,8 +80,6 @@ export class AdController {
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     try {
-      await this.expireAdsMiddleware.use(req, response, () => {});
-
       if (!files || files.length === 0) {
         throw new BadRequestException('Select at least one file');
       }
@@ -107,7 +102,6 @@ export class AdController {
   @Get('my-ads')
   async getMyAds(@Req() req: Request, @Res() response, @GetUser() user: User) {
     try {
-      await this.expireAdsMiddleware.use(req, response, () => {});
       const data = await this.adService.getMyAds(user);
       return response
         .status(HttpStatus.OK)
@@ -133,8 +127,6 @@ export class AdController {
     @UploadedFiles() files: Express.Multer.File[],
   ) {
     try {
-      await this.expireAdsMiddleware.use(req, response, () => {});
-
       validateAdImagesSize(files);
       const data = await this.adService.updateAd(id, user, payload, files);
 
@@ -210,7 +202,6 @@ export class AdController {
     @Param('id') id: string,
   ) {
     try {
-      await this.expireAdsMiddleware.use(req, response, () => {});
       const data = await this.adService.repostAd(user, id);
       return response.status(HttpStatus.OK).json({ ad: data });
     } catch (error) {
@@ -231,7 +222,6 @@ export class AdController {
     @Param('id') id: string,
   ) {
     try {
-      await this.expireAdsMiddleware.use(req, response, () => {});
       const data = await this.adService.updateAdSellStatus(user, id);
       return response.status(HttpStatus.OK).json({ ad: data });
     } catch (error) {

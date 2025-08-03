@@ -99,12 +99,4 @@ export class PaymentService {
       throw error;
     }
   }
-
-  async expireUserSubscription(userId: string) {
-    try {
-      return await this.paymentStore.expireUserSubscription(userId);
-    } catch (error) {
-      throw error;
-    }
-  }
 }

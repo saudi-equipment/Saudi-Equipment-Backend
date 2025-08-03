@@ -353,6 +353,31 @@ export class PaymentStore {
     }
   }
 
+  async expireAllSubscriptions() {
+    try {
+      const currentDate = new Date();
+      const expiredSubs = await this.subscriptionModel.find({
+        subscriptionStatus: 'active',
+        endDate: { $lt: currentDate },
+      }).exec();
+    
+      console.log("expiredSubs", expiredSubs);
+      const userIds = expiredSubs.map(sub => sub.user);
+    
+      await this.subscriptionModel.updateMany(
+        { _id: { $in: expiredSubs.map(sub => sub._id) } },
+        { subscriptionStatus: 'inactive' },
+      );
+    
+      await this.userModel.updateMany(
+        { _id: { $in: userIds } },
+        { isPremiumUser: false },
+      );
+    } catch (error) {
+      throw error;
+    }
+  }
+  
   async promoteAd(payload: PromoteAdDto) {
     try {
       const {
@@ -427,6 +452,7 @@ export class PaymentStore {
 
         // Update ad document
         ad.isPromoted = true;
+        ad.adPromotion = adPromotion._id;
         await ad.save({ session });
 
         await session.commitTransaction();

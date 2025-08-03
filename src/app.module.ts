@@ -16,13 +16,15 @@ import { MoyasarModule } from './moyasar/moyasar.module';
 import { BannerAdModule } from './google.ad/banner.ad.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { OneSignalModule } from './onesignal/onesignal.module';
-
+import { ScheduleModule } from '@nestjs/schedule';
+import { TasksService } from './task/tasks.service';
 @Module({
   imports: [
     ConfigModule.forRoot({  
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ScheduleModule.forRoot(),
     ConfigurationModule,
     AuthModule,
     UserModule,
@@ -39,6 +41,6 @@ import { OneSignalModule } from './onesignal/onesignal.module';
     OneSignalModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, TasksService],
 })
 export class AppModule {}

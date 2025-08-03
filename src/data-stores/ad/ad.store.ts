@@ -10,6 +10,7 @@ import {
 } from 'src/ads/dtos';
 import { IAd, IReportAd } from 'src/interfaces/ads';
 import { IUser } from 'src/interfaces/user';
+import { IAdPromotion } from 'src/interfaces/ad.promotion/ad.promotion.interface';
 
 @Injectable()
 export class AdStore {
@@ -17,6 +18,7 @@ export class AdStore {
     @InjectModel('Ad') private adModel: Model<IAd>,
     @InjectModel('User') private userModel: Model<IUser>,
     @InjectModel('ReportAd') private reportAdModel: Model<IReportAd>,
+    @InjectModel('AdPromotion') private adPromotionModel: Model<IAdPromotion>,
   ) {}
 
   async createAds(
@@ -802,20 +804,142 @@ export class AdStore {
     try {
       const currentDate = new Date();
       const result = await this.adModel.updateMany(
+      const promotedAds = await this.adModel.aggregate([
         {
-          createdBy: userId,
-          promotionEndDate: { $lt: currentDate },
-          isPromoted: true,
+          $match: {
+            createdBy: userId,
+            isPromoted: true,
+            $or: [
+              {
+                adPromotion: { $exists: true, $ne: null }
+              },
+              {
+                $or: [
+                  { adPromotion: { $exists: false } },
+                  { adPromotion: null }
+                ]
+              }
+            ]
+          }
         },
-        { $set: { isPromoted: false } },
+        {
+          $lookup: {
+            from: 'adpromotions',
+            localField: 'adPromotion',
+            foreignField: '_id',
+            as: 'promotion'
+          }
+        },
+        { $unwind: { path: '$promotion', preserveNullAndEmptyArrays: true } },
+        {
+          $match: {
+            $or: [
+              {
+                'promotion.promotionEndDate': { $lt: currentDate }
+              },
+              {
+                promotion: null
+              }
+            ]
+          }
+        }
+      ]);
+    
+      if (promotedAds.length === 0) {
+        return { message: 'No expired or orphaned ads found' };
+      }
+    
+      console.log(`Found ${promotedAds.length} expired/orphaned ads to process`, promotedAds);
+      
+      const adIds = promotedAds.map(ad => ad._id);
+    
+      const updateResult = await this.adModel.updateMany(
+        { _id: { $in: adIds } },
+        {
+          $set: {
+            isPromoted: false,
+          }
+        }
       );
-
-      return result;
+    
+      console.log(`Successfully expired ${updateResult.modifiedCount} ads`);
+    
+      return {
+        message: `Successfully expired ${updateResult.modifiedCount} ads`,
+        expiredCount: updateResult.modifiedCount
+      };
     } catch (error) {
       throw error;
     }
   }
 
+  async expireAllAds() {
+    const currentDate = new Date();
+    const promotedAds = await this.adModel.aggregate([
+      {
+        $match: {
+          isPromoted: true,
+          $or: [
+            {
+              adPromotion: { $exists: true, $ne: null }
+            },
+            {
+              $or: [
+                { adPromotion: { $exists: false } },
+                { adPromotion: null }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        $lookup: {
+          from: 'adpromotions',
+          localField: 'adPromotion',
+          foreignField: '_id',
+          as: 'promotion'
+        }
+      },
+      { $unwind: { path: '$promotion', preserveNullAndEmptyArrays: true } },
+      {
+        $match: {
+          $or: [
+            {
+              'promotion.promotionEndDate': { $lt: currentDate }
+            },
+            {
+              promotion: null
+            }
+          ]
+        }
+      }
+    ]);
+  
+    if (promotedAds.length === 0) {
+      return { message: 'No expired or orphaned ads found' };
+    }
+  
+    console.log(`Found ${promotedAds.length} expired/orphaned ads to process`);
+    
+    const adIds = promotedAds.map(ad => ad._id);
+  
+    const updateResult = await this.adModel.updateMany(
+      { _id: { $in: adIds } },
+      {
+        $set: {
+          isPromoted: false,
+        }
+      }
+    );
+  
+    console.log(`Successfully expired ${updateResult.modifiedCount} ads`);
+  
+    return {
+      message: `Successfully expired ${updateResult.modifiedCount} ads`,
+      expiredCount: updateResult.modifiedCount
+    };
+  }
+  
   async findAllAds(user: User) {
     return await this.adModel.find({ createdBy: user.id });
   }
