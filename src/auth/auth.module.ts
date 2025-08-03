@@ -12,7 +12,6 @@ import { otpSchema } from 'src/schemas/otp/otp.schema';
 import { NotificationModule } from 'src/notification/notification.module';
 import { OtpStore } from 'src/data-stores/otp/otp.store';
 import { DigitalOceanModule } from 'src/digital.ocean/digital.ocean.module';
-import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { AdModule } from 'src/ads/ad.module';
 import { PaymentModule } from 'src/payment/payment.module';
 import { OneSignalModule } from 'src/onesignal/onesignal.module';
@@ -48,8 +47,6 @@ import { OneSignalModule } from 'src/onesignal/onesignal.module';
     JwtStrategy,
     OtpService,
     OtpStore,
-    ExpireAdsMiddleware,
-    ExpireAdsMiddleware,
   ],
   controllers: [AuthController],
   exports: [AuthService, JwtModule],

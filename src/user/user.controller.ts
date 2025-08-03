@@ -24,7 +24,6 @@ import { UserRole } from 'src/enums';
 import { GetUser } from 'src/decorators/user.decorator';
 import { User } from 'src/schemas/user/user.schema';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ExpireAdsMiddleware } from 'src/middleware/expire-ads-middleware';
 import { Public } from 'src/decorators/public.routes.decorator';
 import { validateProfilePicSize } from 'src/utils';
 import { ConflictException } from '@nestjs/common';
@@ -33,7 +32,6 @@ import { ConflictException } from '@nestjs/common';
 export class UserController {
   constructor(
     private readonly userService: UserService,
-    private readonly expireAdsMiddleware: ExpireAdsMiddleware,
   ) {}
 
   @UseGuards(RolesGuard)
@@ -71,8 +69,6 @@ export class UserController {
     @Body() payload: UserUpdateDto,
   ) {
     try {
-      await this.expireAdsMiddleware.use(req, response, () => {});
-
       validateProfilePicSize(profilePicture);
       const data = await this.userService.updateUser(
         userId,
@@ -94,7 +90,6 @@ export class UserController {
     @GetUser() user: User,
   ) {
     try {
-      await this.expireAdsMiddleware.use(req, response, () => {});
       const result = await this.userService.deleteAccount(user);
       return response.status(200).json(result);
     } catch (error) {
@@ -111,7 +106,6 @@ export class UserController {
     @GetUser('id') userId: string,
   ) {
     try {
-      await this.expireAdsMiddleware.use(req, response, () => {});
       const data = await this.userService.getUserById(userId);
       return response.status(HttpStatus.OK).json(data);
     } catch (error) {
@@ -128,7 +122,6 @@ export class UserController {
     @GetUser() user: User,
   ) {
     try {
-      await this.expireAdsMiddleware.use(req, response, () => {});
       const data = await this.userService.activateOrDeactivateAccount(user);
       return response.status(HttpStatus.OK).json(data);
     } catch (error) {

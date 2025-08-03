@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { User } from 'src/schemas/user/user.schema';
 
 export interface IAd {
@@ -32,6 +33,7 @@ export interface IAd {
   promotionPlan?: string;
   promotionStartDate?: Date;
   promotionEndDate?: Date;
+  adPromotion?: Types.ObjectId;
   images: string[];
   createdAt: Date;
   updatedAt: Date;
