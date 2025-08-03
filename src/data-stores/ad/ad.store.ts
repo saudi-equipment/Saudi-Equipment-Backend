@@ -803,7 +803,6 @@ export class AdStore {
   async expireUserAds(userId: string) {
     try {
       const currentDate = new Date();
-      const result = await this.adModel.updateMany(
       const promotedAds = await this.adModel.aggregate([
         {
           $match: {
