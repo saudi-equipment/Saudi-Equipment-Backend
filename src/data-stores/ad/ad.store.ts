@@ -874,21 +874,12 @@ export class AdStore {
 
   async expireAllAds() {
     const currentDate = new Date();
-    const promotedAds = await this.adModel.aggregate([
+    
+    const expiredPromotedAds = await this.adModel.aggregate([
       {
         $match: {
-          isPromoted: true,
-          $or: [
-            {
-              adPromotion: { $exists: true, $ne: null }
-            },
-            {
-              $or: [
-                { adPromotion: { $exists: false } },
-                { adPromotion: null }
-              ]
-            }
-          ]
+          isPromoted: true,  
+          adPromotion: { $exists: true, $ne: null }  
         }
       },
       {
@@ -899,31 +890,30 @@ export class AdStore {
           as: 'promotion'
         }
       },
-      { $unwind: { path: '$promotion', preserveNullAndEmptyArrays: true } },
+      { $unwind: { path: '$promotion' } }, 
       {
         $match: {
-          $or: [
-            {
-              'promotion.promotionEndDate': { $lt: currentDate }
-            },
-            {
-              promotion: null
-            }
-          ]
+          'promotion.promotionEndDate': { $lt: currentDate }  
         }
       }
     ]);
+
+    console.log("expiredPromotedAds", expiredPromotedAds);
   
-    if (promotedAds.length === 0) {
-      return { message: 'No expired or orphaned ads found' };
+    if (expiredPromotedAds.length === 0) {
+      console.log('No expired promoted ads found');
+      return { message: 'No expired promoted ads found' };
     }
   
-    console.log(`Found ${promotedAds.length} expired/orphaned ads to process`);
+    console.log(`Found ${expiredPromotedAds.length} expired promoted ads`);
     
-    const adIds = promotedAds.map(ad => ad._id);
+    const expiredAdIds = expiredPromotedAds.map(ad => ad._id);
   
     const updateResult = await this.adModel.updateMany(
-      { _id: { $in: adIds } },
+      { 
+        _id: { $in: expiredAdIds },
+        isPromoted: true  
+      },
       {
         $set: {
           isPromoted: false,
@@ -935,10 +925,11 @@ export class AdStore {
   
     return {
       message: `Successfully expired ${updateResult.modifiedCount} ads`,
-      expiredCount: updateResult.modifiedCount
+      expiredCount: updateResult.modifiedCount,
+      expiredAds: expiredPromotedAds  
     };
   }
-  
+
   async findAllAds(user: User) {
     return await this.adModel.find({ createdBy: user.id });
   }
