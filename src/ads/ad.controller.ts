@@ -177,6 +177,20 @@ export class AdController {
   }
 
   @Public()
+  @Get('get-all-ad-id')
+  async getAllAdsId(@Res() response, @Query() query: GetAllAdQueryDto) {
+    try {
+      const data = await this.adService.getAllAdId(query);
+      return response.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: error.message || 'Ad Not found',
+      });
+    }
+  }
+  
+  @Public()
   @Get(':id')
   async getAdById(@Res() response, @Param('id') id: string) {
     try {

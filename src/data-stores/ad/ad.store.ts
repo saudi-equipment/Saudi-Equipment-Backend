@@ -689,6 +689,15 @@ export class AdStore {
     }
   }
 
+  async getAllAdId(skip: number, limit: number, query: GetAllAdQueryDto) {
+    try {
+      const result = await this.adModel.find({}, '_id').lean();
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getMyAds(user: User): Promise<IAd[]> {
     try {
       return this.adModel.aggregate([

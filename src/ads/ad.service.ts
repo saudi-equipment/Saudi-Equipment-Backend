@@ -322,6 +322,17 @@ export class AdService {
     }
   }
 
+  async getAllAdId(query: GetAllAdQueryDto) {
+    try {
+      const { page, limit } = query;
+      const { skip, limit: currentLimit } = getPagination({ page, limit });
+      const result = await this.adStore.getAllAdId(skip, currentLimit, query);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getAllAdsForAdmin(query: GetAllAdQueryDto) {
     try {
       const { page, limit } = query;
