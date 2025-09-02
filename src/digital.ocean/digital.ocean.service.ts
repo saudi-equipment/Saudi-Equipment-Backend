@@ -43,7 +43,7 @@ export class DigitalOceanService {
     const uploadCommand = new PutObjectCommand(uploadParams);
     await this.s3Client.send(uploadCommand);
 
-    const url = `${this.configService.get('SPACES_REGION_ENDPOINT')}/${uploadParams.Bucket}/${uploadParams.Key}`;
+    const url = `${this.configService.get('SPACES_REGION_PUBLIC_ENDPOINT')}/${uploadParams.Key}`;
     return url;
   }
 
@@ -66,7 +66,8 @@ export class DigitalOceanService {
   
   extractFileKeyFromUrl(url: string): string {
     const urlParts = url.split('/');
-    return urlParts.slice(-2).join('/');
+    const publicUrl = `${this.configService.get('SPACES_REGION_PUBLIC_ENDPOINT')}/`;
+    return url.replace(publicUrl, '');
   }
 
   
