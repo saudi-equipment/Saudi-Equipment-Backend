@@ -47,6 +47,22 @@ export class DigitalOceanService {
     return url;
   }
 
+  async uploadFileToBucket(buffer: Buffer, key: string): Promise<string> {
+    const uploadParams = {
+      Bucket: this.configService.get('SPACES_BUCKET_NAME'),
+      Key: key,
+      Body: buffer,
+      ContentType: 'image/webp',
+      ACL: ObjectCannedACL.public_read,
+    };
+
+    const uploadCommand = new PutObjectCommand(uploadParams);
+    await this.s3Client.send(uploadCommand);
+
+    const url = `${this.configService.get('SPACES_REGION_PUBLIC_ENDPOINT')}/${uploadParams.Key}`;
+    return url;
+  }
+
   async deleteFilesFromSpaces(fileUrls?: string | string[]) {
     try {
       for (const url of fileUrls) {

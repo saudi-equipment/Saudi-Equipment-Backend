@@ -12,6 +12,8 @@ import { IAd, IReportAd } from 'src/interfaces/ads';
 import { IUser } from 'src/interfaces/user';
 import { IAdPromotion } from 'src/interfaces/ad.promotion/ad.promotion.interface';
 import { generateUniqueSlug } from 'src/utils';
+import { DigitalOceanService } from '../../digital.ocean/digital.ocean.service';
+import * as sharp from 'sharp';
 
 @Injectable()
 export class AdStore {
@@ -20,6 +22,7 @@ export class AdStore {
     @InjectModel('User') private userModel: Model<IUser>,
     @InjectModel('ReportAd') private reportAdModel: Model<IReportAd>,
     @InjectModel('AdPromotion') private adPromotionModel: Model<IAdPromotion>,
+    private readonly digitalOceanService: DigitalOceanService,
   ) {}
 
   async createAds(
@@ -1166,5 +1169,47 @@ export class AdStore {
       console.error('Error in getAllSlugs:', error);
       throw error;
     }
+  }
+
+  async migrateImageUrl() {
+    try {
+      const urlRegex = /nyc3\.digitaloceanspaces\.com/;
+      const ads = await this.adModel.find({ images: { $elemMatch: { $regex: urlRegex } } });
+      for (const ad of ads) {
+        const images:string[] = [];
+        for (const image of ad.images) {
+          if(image.match(urlRegex)) {
+            const key = image.replace("https://nyc3.digitaloceanspaces.com/equipment/files/", '');
+            const webpKey = key.endsWith('.webp') ? key : key.replace(/\.[^/.]+$/, '') + '.webp';
+            const downloadedImage = await this.downloadImage(image);
+            const webpBuffer = await this.convertToWebp(downloadedImage);
+            const uploadedImage = await this.digitalOceanService.uploadFileToBucket(webpBuffer,`files/${webpKey}`);
+            images.push(uploadedImage);
+          }
+          else {
+            images.push(image);
+          }
+        }
+        await this.adModel.findByIdAndUpdate(ad._id, { images: images,oldImages:ad.images });
+        console.log(`Updated ad ${ad.adId}: adLength:  ${ads.indexOf(ad)+1}/${ads.length} ${ad.images.length} -> newLength: ${images.length}`);
+      }
+      return { message: 'Images migrated successfully' };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async convertToWebp(buffer: Buffer): Promise<Buffer> {
+    // Use sharp to convert image buffer to webp format with quality 80
+    // Note: sharp must be installed and imported at the top-level of the file
+    return await sharp(buffer).webp({ quality: 80 }).toBuffer();
+  }
+
+  async downloadImage(imageUrl: string) {
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    return buffer;
   }
 }

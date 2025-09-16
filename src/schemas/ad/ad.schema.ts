@@ -75,6 +75,9 @@ export class Ad extends Document {
 
   @Prop({ required: false, unique: true, sparse: true })
   slug: string;
+
+  @Prop({ type: [String], required: false })
+  oldImages: string[];
 }
 
 export const adsSchema = SchemaFactory.createForClass(Ad);

@@ -337,4 +337,21 @@ export class AdController {
       });
     }
   }
+
+  @Public()
+  @Get('image-url/migrate-image-url')
+  async migrateImageUrl(@Res() response) {
+    try {
+      response.status(HttpStatus.OK).json({ message: 'Images migrating...' });
+   
+      const data = await this.adService.migrateImageUrl();
+      return response.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: error.message || 'Slugs Not found',
+      });
+    }
+  }
+
 }

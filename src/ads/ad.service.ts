@@ -386,4 +386,13 @@ export class AdService {
       throw error;
     }
   }
+
+  async migrateImageUrl() {
+    try {
+      const result = await this.adStore.migrateImageUrl();
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
