@@ -23,7 +23,7 @@ export class AdStore {
     @InjectModel('ReportAd') private reportAdModel: Model<IReportAd>,
     @InjectModel('AdPromotion') private adPromotionModel: Model<IAdPromotion>,
     private readonly digitalOceanService: DigitalOceanService,
-  ) {}
+  ) { }
 
   async createAds(
     user: User,
@@ -491,33 +491,33 @@ export class AdStore {
       },
       ...(search
         ? [
-            {
-              $match: {
-                $or: [
-                  { titleEn: { $regex: search, $options: 'i' } },
-                  { titleAr: { $regex: search, $options: 'i' } },
-                  { adId: { $regex: search, $options: 'i' } },
-                  { category: { $regex: search, $options: 'i' } },
-                  { fuelType: { $regex: search, $options: 'i' } },
-                  { condition: { $regex: search, $options: 'i' } },
-                  { description: { $regex: search, $options: 'i' } },
-                  { price: { $regex: search, $options: 'i' } },
-                  { currency: { $regex: search, $options: 'i' } },
-                  { year: { $regex: search, $options: 'i' } },
-                  { city: { $regex: search, $options: 'i' } },
-                  { duration: { $regex: search, $options: 'i' } },
-                  { 'userDetails.email': { $regex: search, $options: 'i' } },
-                  { 'userDetails.name': { $regex: search, $options: 'i' } },
-                  {
-                    'userDetails.phoneNumber': {
-                      $regex: search,
-                      $options: 'i',
-                    },
+          {
+            $match: {
+              $or: [
+                { titleEn: { $regex: search, $options: 'i' } },
+                { titleAr: { $regex: search, $options: 'i' } },
+                { adId: { $regex: search, $options: 'i' } },
+                { category: { $regex: search, $options: 'i' } },
+                { fuelType: { $regex: search, $options: 'i' } },
+                { condition: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+                { price: { $regex: search, $options: 'i' } },
+                { currency: { $regex: search, $options: 'i' } },
+                { year: { $regex: search, $options: 'i' } },
+                { city: { $regex: search, $options: 'i' } },
+                { duration: { $regex: search, $options: 'i' } },
+                { 'userDetails.email': { $regex: search, $options: 'i' } },
+                { 'userDetails.name': { $regex: search, $options: 'i' } },
+                {
+                  'userDetails.phoneNumber': {
+                    $regex: search,
+                    $options: 'i',
                   },
-                ],
-              },
+                },
+              ],
             },
-          ]
+          },
+        ]
         : []),
       {
         $facet: {
@@ -1176,23 +1176,37 @@ export class AdStore {
       const urlRegex = /nyc3\.digitaloceanspaces\.com/;
       const ads = await this.adModel.find({ images: { $elemMatch: { $regex: urlRegex } } });
       for (const ad of ads) {
-        const images:string[] = [];
-        for (const image of ad.images) {
-          if(image.match(urlRegex)) {
-            const key = image.replace("https://nyc3.digitaloceanspaces.com/equipment/files/", '');
-            const webpKey = key.endsWith('.webp') ? key : key.replace(/\.[^/.]+$/, '') + '.webp';
-            const downloadedImage = await this.downloadImage(image);
-            const webpBuffer = await this.convertToWebp(downloadedImage);
-            const uploadedImage = await this.digitalOceanService.uploadFileToBucket(webpBuffer,`files/${webpKey}`);
-            images.push(uploadedImage);
-          }
-          else {
+        const images: string[] = [];
+          for (const image of ad.images) {
+        try {
+            if (image.match(urlRegex)) {
+              const key = image.replace("https://nyc3.digitaloceanspaces.com/equipment/files/", '');
+              const webpKey = key.endsWith('.webp') ? key : key.replace(/\.[^/.]+$/, '') + '.webp';
+              const downloadedImage = await this.downloadImage(image);
+              if (!downloadedImage) {
+                console.error('Error in downloadImage:', image);
+                images.push(image);
+                continue;
+              }
+              const webpBuffer = await this.convertToWebp(downloadedImage);
+              const uploadedImage = await this.digitalOceanService.uploadFileToBucket(webpBuffer, `files/${webpKey}`);
+              images.push(uploadedImage);
+            }
+            else {
+              images.push(image);
+            }
+          } catch (error) {
             images.push(image);
+            console.error('Error in migrateImageUrl:', error);
           }
-        }
-        await this.adModel.findByIdAndUpdate(ad._id, { images: images,oldImages:ad.images });
-        console.log(`Updated ad ${ad.adId}: adLength:  ${ads.indexOf(ad)+1}/${ads.length} ${ad.images.length} -> newLength: ${images.length}`);
+          }
+          await this.adModel.findByIdAndUpdate(ad._id, { images: images, oldImages: ad.images });
+          console.log(`Updated ad ${ad.adId}: adLength:  ${ads.indexOf(ad) + 1}/${ads.length} ${ad.images.length} -> newLength: ${images.length}`);
+
+       
+
       }
+      console.log('Images migrated successfully ==>', ads.length);
       return { message: 'Images migrated successfully' };
     } catch (error) {
       throw error;
@@ -1206,10 +1220,15 @@ export class AdStore {
   }
 
   async downloadImage(imageUrl: string) {
-    const response = await fetch(imageUrl);
-    const blob = await response.blob();
-    const arrayBuffer = await blob.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    return buffer;
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const arrayBuffer = await blob.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      return buffer;
+    } catch (error) {
+      console.error('Error in downloadImage:', error);
+      return null;
+    }
   }
 }
