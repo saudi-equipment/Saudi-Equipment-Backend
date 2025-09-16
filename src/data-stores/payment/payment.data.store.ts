@@ -11,6 +11,7 @@ import { IAdPromotion } from 'src/interfaces/ad.promotion/ad.promotion.interface
 import { PromoteAdDto } from 'src/payment/dtos/promote-ad.dto';
 import { SubscriptionDto } from 'src/payment/dtos/create-subscription.dto';
 import { async } from 'rxjs';
+import { formatPrice } from 'src/utils';
 
 @Injectable()
 export class PaymentStore {
@@ -43,6 +44,7 @@ export class PaymentStore {
         paymentCompany,
       } = payload;
 
+      const formattedPrice = formatPrice(price);
       const startDate = new Date(created_at || Date.now());
       let endDate: Date;
 
@@ -62,7 +64,6 @@ export class PaymentStore {
         transactionId: id,
         user: new Types.ObjectId(userId),
         plan,
-        price,
         startDate,
         endDate,
         subscriptionStatus: 'active',
@@ -70,6 +71,7 @@ export class PaymentStore {
         paymentType,
         paymentCompany,
         ...payload,
+        price: formattedPrice,
       });
 
       await subscription.save();
@@ -81,7 +83,7 @@ export class PaymentStore {
         paymentType,
         paymentCompany,
         currency: 'SAR',
-        price,
+        price: formattedPrice,
         status: payload.status,
         subscription: subscription._id,
         user: new Types.ObjectId(userId)
