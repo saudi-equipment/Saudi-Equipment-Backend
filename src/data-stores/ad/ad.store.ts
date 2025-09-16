@@ -11,6 +11,7 @@ import {
 import { IAd, IReportAd } from 'src/interfaces/ads';
 import { IUser } from 'src/interfaces/user';
 import { IAdPromotion } from 'src/interfaces/ad.promotion/ad.promotion.interface';
+import { generateUniqueSlug } from 'src/utils';
 
 @Injectable()
 export class AdStore {
@@ -28,6 +29,10 @@ export class AdStore {
     uploadedUrls: string[],
     transactionId?: string,
   ): Promise<IAd> {
+    // Generate unique slug from title (prefer English title, fallback to Arabic)
+    const titleForSlug = payload.titleAr || payload.titleEn;
+    const slug = await generateUniqueSlug(titleForSlug, adId, this.adModel);
+
     const newAd = new this.adModel({
       createdBy: user.id,
       adId: adId,
@@ -38,6 +43,7 @@ export class AdStore {
       promotionPlan: payload.promotionPlan,
       promotionPrice: payload.promotionPrice,
       duration: payload.duration,
+      slug: slug,
       ...payload,
       images: uploadedUrls,
       user: user._id,
@@ -70,18 +76,38 @@ export class AdStore {
     transactionId?: string,
   ): Promise<IAd> {
     try {
+      // Get the existing ad to check if title changed
+      const existingAd = await this.adModel.findById(id);
+      const updateData: any = {
+        isPromoted: payload.isFeatured,
+        promotionStartDate: payload.startDate,
+        promotionEndDate: payload.endDate,
+        transactionId: transactionId,
+        promotionPrice: payload.promotionPrice,
+        ...payload,
+        images: uploadedUrls || null,
+      };
+
+      // If title changed, update the slug
+      if (payload.titleAr || payload.titleEn) {
+        const titleForSlug =
+          payload.titleAr ||
+          payload.titleEn ||
+          existingAd.titleAr ||
+          existingAd.titleEn;
+        const newSlug = await generateUniqueSlug(
+          titleForSlug,
+          existingAd.adId,
+          this.adModel,
+          id,
+        );
+        updateData.slug = newSlug;
+      }
+
       const updatedAd = await this.adModel.findByIdAndUpdate(
         { _id: new Types.ObjectId(id), createdBy: user._id },
         {
-          $set: {
-            isPromoted: payload.isFeatured,
-            promotionStartDate: payload.startDate,
-            promotionEndDate: payload.endDate,
-            transactionId: transactionId,
-            promotionPrice: payload.promotionPrice,
-            ...payload,
-            images: uploadedUrls || null,
-          },
+          $set: updateData,
         },
         { new: true },
       );
@@ -102,9 +128,9 @@ export class AdStore {
     if (!existingAd) {
       throw new Error('Ad not found or unauthorized');
     }
-    (existingAd.isActive = false),
-      (existingAd.isPromoted = false),
-      (existingAd.isSold = true);
+    existingAd.isActive = false;
+    existingAd.isPromoted = false;
+    existingAd.isSold = true;
     existingAd.soldDate = new Date();
 
     await existingAd.save();
@@ -119,7 +145,8 @@ export class AdStore {
 
     if (existingAd) {
       existingAd.isRenew = true;
-      (existingAd.isActive = true), (existingAd.updatedAt = new Date());
+      existingAd.isActive = true;
+      existingAd.updatedAt = new Date();
 
       await existingAd.save();
       return existingAd;
@@ -187,6 +214,7 @@ export class AdStore {
             youTubeLink: 1,
             views: 1,
             images: 1,
+            slug: 1,
             createdAt: 1,
             updatedAt: 1,
             'user._id': 1,
@@ -207,6 +235,82 @@ export class AdStore {
         { _id: new Types.ObjectId(id) },
         { $inc: { views: 1 } },
       );
+
+      return ad[0];
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAdBySlug(slug: string): Promise<IAd> {
+    try {
+      const ad = await this.adModel.aggregate([
+        {
+          $match: { slug: slug },
+        },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'user',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+        {
+          $unwind: {
+            path: '$user',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $project: {
+            category: 1,
+            fuelType: 1,
+            createdBy: 1,
+            condition: 1,
+            titleAr: 1,
+            titleEn: 1,
+            description: 1,
+            price: 1,
+            currency: 1,
+            adId: 1,
+            year: 1,
+            city: 1,
+            isActive: 1,
+            promotionPrice: 1,
+            promotionPlan: 1,
+            paymentCompany: 1,
+            paymentType: 1,
+            duration: 1,
+            startDate: 1,
+            endDate: 1,
+            isPromoted: 1,
+            isRenew: 1,
+            youTubeLink: 1,
+            views: 1,
+            images: 1,
+            slug: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            'user._id': 1,
+            'user.name': 1,
+            'user.email': 1,
+            'user.phoneNumber': 1,
+            'user.city': 1,
+            'user.profilePicture': 1,
+            'user.createdAt': 1,
+            'user.updatedAt': 1,
+            'user.isPremiumUser': 1,
+            'user.isVerified': 1,
+          },
+        },
+      ]);
+
+      if (!ad || ad.length === 0) {
+        throw new NotFoundException('Ad not found');
+      }
+
+      await this.adModel.updateOne({ slug: slug }, { $inc: { views: 1 } });
 
       return ad[0];
     } catch (error) {
@@ -314,8 +418,17 @@ export class AdStore {
     limit: number,
     query: GetAllAdQueryDto,
   ) {
-    
-    const { search, sortType, adStatus, orderType, isPromoted, category, condition, fuelType, city } = query;
+    const {
+      search,
+      sortType,
+      adStatus,
+      orderType,
+      isPromoted,
+      category,
+      condition,
+      fuelType,
+      city,
+    } = query;
 
     const baseFilters: any = { isActive: { $in: [true, false] } };
 
@@ -352,11 +465,11 @@ export class AdStore {
     if (fuelType) {
       baseFilters.fuelType = fuelType;
     }
-    
+
     if (city) {
       baseFilters.city = city;
     }
-    
+
     const result = await this.adModel.aggregate([
       { $match: baseFilters },
       {
@@ -587,17 +700,17 @@ export class AdStore {
       }
 
       const promotedFilters = { ...filters, isPromoted: true };
-      const regularFilters = { 
+      const regularFilters = {
         ...filters,
-        ...(isHome ? {} : { isPromoted: false }), 
-        ...cityFilter 
+        ...(isHome ? {} : { isPromoted: false }),
+        ...cityFilter,
       };
-      
+
       const pipeline: any[] = [
         {
-          $match: isPromoted 
-            ? promotedFilters   
-            : { $or: [promotedFilters, regularFilters] }  
+          $match: isPromoted
+            ? promotedFilters
+            : { $or: [promotedFilters, regularFilters] },
         },
         {
           $addFields: {
@@ -689,9 +802,9 @@ export class AdStore {
     }
   }
 
-  async getAllAdId(skip: number, limit: number, query: GetAllAdQueryDto) {
+  async getAllAdsIdAndImages() {
     try {
-      const result = await this.adModel.find({}, '_id').lean();
+      const result = await this.adModel.find({}, '_id images').lean();
       return result;
     } catch (error) {
       throw error;
@@ -700,60 +813,69 @@ export class AdStore {
 
   async getMyAds(user: User): Promise<IAd[]> {
     try {
-      return this.adModel.aggregate([
-        // 1. Match ads created by the user
-        { $match: { createdBy: user.id } },
+      return this.adModel
+        .aggregate([
+          // 1. Match ads created by the user
+          { $match: { createdBy: user.id } },
 
-        // 2. Lookup adPromotion for each ad
-        {
-          $lookup: {
-            from: 'adpromotions',
-            localField: '_id',
-            foreignField: 'ad',
-            as: 'adpromotion',
+          // 2. Lookup adPromotion for each ad
+          {
+            $lookup: {
+              from: 'adpromotions',
+              localField: '_id',
+              foreignField: 'ad',
+              as: 'adpromotion',
+            },
           },
-        },
-        { $unwind: { path: '$adpromotion', preserveNullAndEmptyArrays: true } },
+          {
+            $unwind: { path: '$adpromotion', preserveNullAndEmptyArrays: true },
+          },
 
-        // 3. Only perform payment transaction lookup for promoted ads
-        {
-          $lookup: {
-            from: 'paymenttransactions',
-            let: { adPromotionId: '$adpromotion._id' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ['$adPromotion', '$$adPromotionId'] },
-                      { $ifNull: ['$$adPromotionId', false] }, // Only match if adPromotionId exists
-                    ],
+          // 3. Only perform payment transaction lookup for promoted ads
+          {
+            $lookup: {
+              from: 'paymenttransactions',
+              let: { adPromotionId: '$adpromotion._id' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$adPromotion', '$$adPromotionId'] },
+                        { $ifNull: ['$$adPromotionId', false] }, // Only match if adPromotionId exists
+                      ],
+                    },
                   },
                 },
-              },
-            ],
-            as: 'paymenttransaction',
+              ],
+              as: 'paymenttransaction',
+            },
           },
-        },
-        { $unwind: { path: '$paymenttransaction', preserveNullAndEmptyArrays: true } },
-
-        // 4. Clean up the output
-        {
-          $project: {
-            '__v': 0,
-            'adpromotion.__v': 0,
-            'adpromotion.ad': 0,
-            'adpromotion.user': 0,
-            'paymenttransaction.__v': 0,
-            'paymenttransaction.adPromotion': 0,
-            'paymenttransaction.user': 0,
-            'paymenttransaction.adpromotion': 0,
+          {
+            $unwind: {
+              path: '$paymenttransaction',
+              preserveNullAndEmptyArrays: true,
+            },
           },
-        },
 
-        // 5. Sort by creation
-        { $sort: { createdAt: -1 } },
-      ]).exec();
+          // 4. Clean up the output
+          {
+            $project: {
+              __v: 0,
+              'adpromotion.__v': 0,
+              'adpromotion.ad': 0,
+              'adpromotion.user': 0,
+              'paymenttransaction.__v': 0,
+              'paymenttransaction.adPromotion': 0,
+              'paymenttransaction.user': 0,
+              'paymenttransaction.adpromotion': 0,
+            },
+          },
+
+          // 5. Sort by creation
+          { $sort: { createdAt: -1 } },
+        ])
+        .exec();
     } catch (error) {
       throw error;
     }
@@ -819,62 +941,65 @@ export class AdStore {
             isPromoted: true,
             $or: [
               {
-                adPromotion: { $exists: true, $ne: null }
+                adPromotion: { $exists: true, $ne: null },
               },
               {
                 $or: [
                   { adPromotion: { $exists: false } },
-                  { adPromotion: null }
-                ]
-              }
-            ]
-          }
+                  { adPromotion: null },
+                ],
+              },
+            ],
+          },
         },
         {
           $lookup: {
             from: 'adpromotions',
             localField: 'adPromotion',
             foreignField: '_id',
-            as: 'promotion'
-          }
+            as: 'promotion',
+          },
         },
         { $unwind: { path: '$promotion', preserveNullAndEmptyArrays: true } },
         {
           $match: {
             $or: [
               {
-                'promotion.promotionEndDate': { $lt: currentDate }
+                'promotion.promotionEndDate': { $lt: currentDate },
               },
               {
-                promotion: null
-              }
-            ]
-          }
-        }
+                promotion: null,
+              },
+            ],
+          },
+        },
       ]);
-    
+
       if (promotedAds.length === 0) {
         return { message: 'No expired or orphaned ads found' };
       }
-    
-      console.log(`Found ${promotedAds.length} expired/orphaned ads to process`, promotedAds);
-      
-      const adIds = promotedAds.map(ad => ad._id);
-    
+
+      console.log(
+        `Found ${promotedAds.length} expired/orphaned ads to process`,
+        promotedAds,
+      );
+
+      const adIds = promotedAds.map((ad) => ad._id);
+
       const updateResult = await this.adModel.updateMany(
         { _id: { $in: adIds } },
         {
           $set: {
             isPromoted: false,
-          }
-        }
+          },
+        },
       );
-    
+
       console.log(`Successfully expired ${updateResult.modifiedCount} ads`);
-    
+
       return {
         message: `Successfully expired ${updateResult.modifiedCount} ads`,
-        expiredCount: updateResult.modifiedCount
+        expiredCount: updateResult.modifiedCount,
       };
     } catch (error) {
       throw error;
@@ -883,63 +1008,163 @@ export class AdStore {
 
   async expireAllAds() {
     const currentDate = new Date();
-    
+
     const expiredPromotedAds = await this.adModel.aggregate([
       {
         $match: {
-          isPromoted: true,  
-          adPromotion: { $exists: true, $ne: null }  
-        }
+          isPromoted: true,
+          adPromotion: { $exists: true, $ne: null },
+        },
       },
       {
         $lookup: {
           from: 'adpromotions',
           localField: 'adPromotion',
           foreignField: '_id',
-          as: 'promotion'
-        }
+          as: 'promotion',
+        },
       },
-      { $unwind: { path: '$promotion' } }, 
+      { $unwind: { path: '$promotion' } },
       {
         $match: {
-          'promotion.promotionEndDate': { $lt: currentDate }  
-        }
-      }
+          'promotion.promotionEndDate': { $lt: currentDate },
+        },
+      },
     ]);
 
-    console.log("expiredPromotedAds", expiredPromotedAds);
-  
+    console.log('expiredPromotedAds', expiredPromotedAds);
+
     if (expiredPromotedAds.length === 0) {
       console.log('No expired promoted ads found');
       return { message: 'No expired promoted ads found' };
     }
-  
+
     console.log(`Found ${expiredPromotedAds.length} expired promoted ads`);
-    
-    const expiredAdIds = expiredPromotedAds.map(ad => ad._id);
-  
+
+    const expiredAdIds = expiredPromotedAds.map((ad) => ad._id);
+
     const updateResult = await this.adModel.updateMany(
-      { 
+      {
         _id: { $in: expiredAdIds },
-        isPromoted: true  
+        isPromoted: true,
       },
       {
         $set: {
           isPromoted: false,
-        }
-      }
+        },
+      },
     );
-  
+
     console.log(`Successfully expired ${updateResult.modifiedCount} ads`);
-  
+
     return {
       message: `Successfully expired ${updateResult.modifiedCount} ads`,
       expiredCount: updateResult.modifiedCount,
-      expiredAds: expiredPromotedAds  
+      expiredAds: expiredPromotedAds,
     };
   }
 
   async findAllAds(user: User) {
     return await this.adModel.find({ createdBy: user.id });
+  }
+
+  async migrateSlugs() {
+    try {
+      // Get all ads that don't have valid slugs
+      const adsWithoutSlugs = await this.adModel.find({
+        $or: [
+          { slug: { $exists: false } },
+          { slug: null },
+          { slug: '' },
+          { slug: { $regex: /^\s*$/ } }, // Also catch whitespace-only slugs
+        ],
+      });
+
+      console.log(`Found ${adsWithoutSlugs.length} ads without slugs`);
+
+      const results = {
+        totalAds: adsWithoutSlugs.length,
+        processedAds: 0,
+        updatedAds: 0,
+        errors: [],
+        updatedSlugs: [],
+      };
+
+      for (const ad of adsWithoutSlugs) {
+        try {
+          // Double-check: only process ads that don't have valid slugs
+          if (ad.slug && ad.slug.trim() !== '') {
+            console.log(
+              `Skipping ad ${ad.adId} - already has slug: ${ad.slug}`,
+            );
+            continue;
+          }
+
+          // Generate unique slug for this ad
+          const titleForSlug = ad.titleAr || ad.titleEn;
+          if (!titleForSlug) {
+            results.errors.push({
+              adId: ad._id,
+              adIdField: ad.adId,
+              error: 'No title found for slug generation',
+            });
+            continue;
+          }
+
+          const slug = await generateUniqueSlug(
+            titleForSlug,
+            ad.adId,
+            this.adModel,
+          );
+
+          // Update the ad with the new slug
+          await this.adModel.findByIdAndUpdate(ad._id, { slug: slug });
+
+          results.updatedAds++;
+          results.updatedSlugs.push({
+            adId: ad._id,
+            adIdField: ad.adId,
+            oldSlug: ad.slug || 'none',
+            newSlug: slug,
+            title: titleForSlug,
+          });
+
+          console.log(`Updated ad ${ad.adId}: ${ad.slug || 'none'} -> ${slug}`);
+        } catch (error) {
+          results.errors.push({
+            adId: ad._id,
+            adIdField: ad.adId,
+            error: error.message,
+          });
+          console.error(`Error updating ad ${ad.adId}:`, error.message);
+        }
+
+        results.processedAds++;
+      }
+
+      console.log(
+        `Migration completed: ${results.updatedAds}/${results.totalAds} ads updated`,
+      );
+      return results;
+    } catch (error) {
+      console.error('Error in migrateSlugs:', error);
+      throw error;
+    }
+  }
+
+  async getAllSlugs() {
+    try {
+      const result = await this.adModel.find({}, '_id images slug adId').lean();
+
+      return result.map((ad) => ({
+        id: String(ad._id),
+        adId: String(ad.adId || ''),
+        slug: ad.slug || null,
+        images: ad.images || [],
+      }));
+    } catch (error) {
+      console.error('Error in getAllSlugs:', error);
+      throw error;
+    }
   }
 }

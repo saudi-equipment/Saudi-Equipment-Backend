@@ -47,7 +47,7 @@ export class DigitalOceanService {
     return url;
   }
 
-  async deleteFilesFromSpaces(fileUrls?: string | string[] ) {
+  async deleteFilesFromSpaces(fileUrls?: string | string[]) {
     try {
       for (const url of fileUrls) {
         const fileKey = this.extractFileKeyFromUrl(url);
@@ -63,12 +63,10 @@ export class DigitalOceanService {
       throw new Error('Error deleting files');
     }
   }
-  
+
   extractFileKeyFromUrl(url: string): string {
     const urlParts = url.split('/');
     const publicUrl = `${this.configService.get('SPACES_REGION_PUBLIC_ENDPOINT')}/`;
     return url.replace(publicUrl, '');
   }
-
-  
 }

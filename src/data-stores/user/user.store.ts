@@ -153,21 +153,21 @@ export class UserStore {
         path: 'subscriptions',
         select: '-__v',
         match: { subscriptionStatus: 'active' },
-        options: { limit: 1 }
+        options: { limit: 1 },
       })
       .populate({
         path: 'paymentTransactions',
         select: '-__v',
         match: { status: 'paid' },
-        options: { limit: 1 }
+        options: { limit: 1 },
       })
       .exec();
 
     // If user has active subscriptions, store the first one
     if (user && user.subscriptions && user.subscriptions.length > 0) {
       user.subscription = user.subscriptions[0];
-    } 
-    
+    }
+
     return user;
   }
 
@@ -184,7 +184,7 @@ export class UserStore {
       return await this.userModel.updateOne(
         { email: email },
         { isEmailVerified: true },
-      );    
+      );
     } catch (error) {
       throw error.message;
     }
@@ -195,7 +195,6 @@ export class UserStore {
     payload: UserUpdateDto,
     newProfilePicUrl?: string,
   ): Promise<IUser | null> {
-    
     const existingUser = await this.userModel
       .findById(userId)
       .populate('subscriptions')
@@ -204,7 +203,7 @@ export class UserStore {
     if (!existingUser) {
       throw new Error('User not found');
     }
-    
+
     const updatedUser = await this.userModel
       .findOneAndUpdate(
         { _id: userId },
@@ -247,16 +246,14 @@ export class UserStore {
           { new: true },
         );
 
-      if(payload.subscriptionId){
-        await this.paymentTransactionModel.findByIdAndUpdate(
-          payload.subscriptionId,
-          { $set: paymentTransactionData },
-          { new: true },
-        );
-      }
-      
+        if (payload.subscriptionId) {
+          await this.paymentTransactionModel.findByIdAndUpdate(
+            payload.subscriptionId,
+            { $set: paymentTransactionData },
+            { new: true },
+          );
+        }
       } else {
-       
         const newSubscription = new this.subscriptionModel({
           user: userId,
           startDate: payload.startDate || new Date(),
@@ -287,7 +284,6 @@ export class UserStore {
         await newPaymentTransaction.save();
         updatedUser.paymentTransactions = newPaymentTransaction.id;
         await updatedUser.save();
-        
       }
     }
 
@@ -350,13 +346,13 @@ export class UserStore {
   async getUserPaymentDetails(user: User) {
     try {
       console.log(user.id);
-      
+
       // Validate and convert user ID to ObjectId
       const userId = new Types.ObjectId(user.id);
-      
+
       const userPaymentDetails = await this.userModel.aggregate([
         {
-          $match: { _id: userId }
+          $match: { _id: userId },
         },
         {
           $lookup: {
@@ -371,32 +367,32 @@ export class UserStore {
             from: 'adpromotions',
             localField: '_id',
             foreignField: 'user',
-            as: 'adPromotions'
-          }
+            as: 'adPromotions',
+          },
         },
         {
           $lookup: {
             from: 'paymenttransactions',
             localField: 'adPromotions._id',
             foreignField: 'adPromotion',
-            as: 'adPromotionsPaymentTransactions'
-          }
+            as: 'adPromotionsPaymentTransactions',
+          },
         },
         {
           $lookup: {
             from: 'paymenttransactions',
             localField: 'subscriptions._id',
             foreignField: 'subscription',
-            as: 'subscriptionsPaymentTransactions'
-          }
+            as: 'subscriptionsPaymentTransactions',
+          },
         },
         {
           $lookup: {
             from: 'ads',
             localField: 'adPromotions.ad',
             foreignField: '_id',
-            as: 'ads'
-          }
+            as: 'ads',
+          },
         },
         {
           $project: {
@@ -427,13 +423,13 @@ export class UserStore {
                                 input: '$subscriptionsPaymentTransactions',
                                 as: 'pt',
                                 cond: {
-                                  $eq: ['$$pt.subscription', '$$sub._id']
-                                }
-                              }
+                                  $eq: ['$$pt.subscription', '$$sub._id'],
+                                },
+                              },
                             },
-                            0
-                          ]
-                        }
+                            0,
+                          ],
+                        },
                       },
                       in: {
                         _id: '$$pt._id',
@@ -446,11 +442,11 @@ export class UserStore {
                         currency: '$$pt.currency',
                         createdAt: '$$pt.createdAt',
                         updatedAt: '$$pt.updatedAt',
-                      }
-                    }
-                  }
-                }
-              }
+                      },
+                    },
+                  },
+                },
+              },
             },
             adPromotions: {
               $map: {
@@ -468,17 +464,17 @@ export class UserStore {
                               $filter: {
                                 input: '$ads',
                                 as: 'ad',
-                                cond: { 
+                                cond: {
                                   $eq: [
-                                    { $toString: '$$ad._id' }, 
-                                    { $toString: '$$ap.ad' }  // Changed from $$ap.adId to $$ap.ad
-                                  ] 
-                                }
-                              }
+                                    { $toString: '$$ad._id' },
+                                    { $toString: '$$ap.ad' }, // Changed from $$ap.adId to $$ap.ad
+                                  ],
+                                },
+                              },
                             },
-                            0
-                          ]
-                        }
+                            0,
+                          ],
+                        },
                       },
                       in: {
                         $cond: {
@@ -490,19 +486,19 @@ export class UserStore {
                             adId: '$$ad.adId',
                             titleAr: '$$ad.titleAr',
                             titleEn: '$$ad.titleEn',
-                            
+
                             isActive: '$$ad.isActive',
                             isPromoted: '$$ad.isPromoted',
                             isSold: '$$ad.isSold',
                             views: '$$ad.views',
                             images: '$$ad.images',
                             createdAt: '$$ad.createdAt',
-                            updatedAt: '$$ad.updatedAt'
+                            updatedAt: '$$ad.updatedAt',
                           },
-                          else: null
-                        }
-                      }
-                    }
+                          else: null,
+                        },
+                      },
+                    },
                   },
                   promotedBy: '$$ap.promotedBy',
                   plan: '$$ap.promotionPlan',
@@ -518,13 +514,13 @@ export class UserStore {
                                 input: '$adPromotionsPaymentTransactions',
                                 as: 'pt',
                                 cond: {
-                                  $eq: ['$$pt.adPromotion', '$$ap._id']
-                                }
-                              }
+                                  $eq: ['$$pt.adPromotion', '$$ap._id'],
+                                },
+                              },
                             },
-                            0
-                          ]
-                        }
+                            0,
+                          ],
+                        },
                       },
                       in: {
                         _id: '$$pt._id',
@@ -537,20 +533,20 @@ export class UserStore {
                         currency: '$$pt.currency',
                         createdAt: '$$pt.createdAt',
                         updatedAt: '$$pt.updatedAt',
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       ]);
-  
+
       if (!userPaymentDetails.length) {
         throw new NotFoundException('User not found');
       }
-  
+
       return userPaymentDetails[0];
     } catch (error) {
       console.error('Error in getUserPaymentDetails:', error);
@@ -558,7 +554,8 @@ export class UserStore {
     }
   }
 
-  async getUserList( query: GetUserListQueryDto,
+  async getUserList(
+    query: GetUserListQueryDto,
     skip: number,
     currentLimit: number,
   ): Promise<{
@@ -598,15 +595,14 @@ export class UserStore {
       sortStage.name = -1;
     }
 
-
     if (query.premiumUsers) {
       matchStage.isPremiumUser = query.premiumUsers;
     }
-    
+
     if (query.city) {
       matchStage.city = query.city;
     }
-    
+
     const aggregationPipeline = [
       { $match: matchStage },
       { $sort: Object.keys(sortStage).length ? sortStage : { createdAt: -1 } },
@@ -647,7 +643,7 @@ export class UserStore {
     ];
 
     const result = await this.userModel.aggregate(aggregationPipeline).exec();
-    
+
     return {
       totalUsers: result[0].totalUsers || 0,
       activeUsers: result[0].activeUsers || 0,
@@ -666,13 +662,13 @@ export class UserStore {
     total: number;
     totalPages: number;
   }> {
-    console.log("query--------------------",query);
+    console.log('query--------------------', query);
     const { search, sortType, orderType } = query;
 
     const matchStage: any = {
       isDeleted: false,
       isActive: true,
-      role: { $ne: UserRole.ADMIN } 
+      role: { $ne: UserRole.ADMIN },
     };
 
     if (search) {
@@ -714,9 +710,9 @@ export class UserStore {
                 isDeleted: 0,
                 isBlocked: 0,
                 subscription: 0,
-                paymentTransactions: 0, 
-                adPromotions: 0,        
-                subscriptions: 0,       
+                paymentTransactions: 0,
+                adPromotions: 0,
+                subscriptions: 0,
                 __v: 0,
               },
             },
@@ -750,7 +746,8 @@ export class UserStore {
       },
       {
         $lookup: {
-          from: 'ads',          let: { userAds: '$ads' },
+          from: 'ads',
+          let: { userAds: '$ads' },
           pipeline: [
             {
               $match: {
@@ -907,20 +904,32 @@ export class UserStore {
   }
 
   async findAllUsers(): Promise<User[]> {
-    return this.userModel.find(
-      {
+    return this.userModel
+      .find({
         isDeleted: false,
         role: { $ne: UserRole.ADMIN },
-      },
-    )
-    .select('-blockedUsers')
-    .select('-ads')
-    .select('-__v')
-    .select('-password')
-    .select('-paymentTransactions')
-    .select('-subscriptions')
-    .select('-adPromotions')
-    .exec();
+      })
+      .select('-blockedUsers')
+      .select('-ads')
+      .select('-__v')
+      .select('-password')
+      .select('-paymentTransactions')
+      .select('-subscriptions')
+      .select('-adPromotions')
+      .exec();
   }
 
+  async getAllUsers(): Promise<{ _id: any; profilePicture?: string }[]> {
+    return this.userModel
+      .find(
+        {
+          isDeleted: false,
+          isActive: true,
+          role: { $ne: UserRole.ADMIN },
+        },
+        '_id profilePicture name',
+      )
+      .lean()
+      .exec();
+  }
 }

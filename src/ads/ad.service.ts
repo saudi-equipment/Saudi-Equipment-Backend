@@ -17,9 +17,9 @@ import { DigitalOceanService } from 'src/digital.ocean/digital.ocean.service';
 import { checkDuplicateImages, generateAdId } from 'src/utils';
 import { generateTransactionId } from 'src/utils/generate.transaction.id.helper';
 import { UserStore } from 'src/data-stores/user/user.store';
-import { PushNotificationType } from 'src/notification/dtos/push.notification.type';
+// import { PushNotificationType } from 'src/notification/dtos/push.notification.type';
 import { NotificationService } from 'src/notification/notification.service';
-import { OneSignalService } from 'src/onesignal/onesignal.service';
+// import { OneSignalService } from 'src/onesignal/onesignal.service';
 
 @Injectable()
 export class AdService {
@@ -68,23 +68,23 @@ export class AdService {
           transactionId,
         );
 
-    //     const users = await this.userStore.findAllUsers();
-        
-    //     // console.log(users.map((id) => id.id));
-    //     const notificationPayload = {
-    //       id: users.map((id) => id.id),
-    //       email: users.map((email) => email.email),
-    //       type: PushNotificationType.ADPUBLISH,
-    //     };
-        
-    //       // Send notification after ad creation is successful
-    // await this.notificationService.sendAdNotificationToAllSubscribed(
-    //   user,
-    //   {
-    //     titleAr: payload.titleAr, // Make sure this matches your ad model
-    //     adId: data.adId          // Using adId from the created ad
-    //   }
-    // );
+        //     const users = await this.userStore.findAllUsers();
+
+        //     // console.log(users.map((id) => id.id));
+        //     const notificationPayload = {
+        //       id: users.map((id) => id.id),
+        //       email: users.map((email) => email.email),
+        //       type: PushNotificationType.ADPUBLISH,
+        //     };
+
+        //       // Send notification after ad creation is successful
+        // await this.notificationService.sendAdNotificationToAllSubscribed(
+        //   user,
+        //   {
+        //     titleAr: payload.titleAr, // Make sure this matches your ad model
+        //     adId: data.adId          // Using adId from the created ad
+        //   }
+        // );
 
         return data;
       } else {
@@ -127,7 +127,7 @@ export class AdService {
         throw new NotFoundException('Ad not found');
       }
 
-      let existingImages = existingAd.images || [];
+      const existingImages = existingAd.images || [];
       const remainingImages = payload.imageUrls || [];
 
       if (remainingImages.length === 0) {
@@ -293,6 +293,20 @@ export class AdService {
     }
   }
 
+  async getAdBySlug(slug: string) {
+    try {
+      const ad = await this.adStore.getAdBySlug(slug);
+
+      if (!ad) {
+        throw new NotFoundException('Ad not found');
+      }
+
+      return ad;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async repostAd(user: User, id: string): Promise<IAd> {
     try {
       const repostAd = await this.adStore.repostAd(user, id);
@@ -322,11 +336,9 @@ export class AdService {
     }
   }
 
-  async getAllAdId(query: GetAllAdQueryDto) {
+  async getAllAdsIdAndImages() {
     try {
-      const { page, limit } = query;
-      const { skip, limit: currentLimit } = getPagination({ page, limit });
-      const result = await this.adStore.getAllAdId(skip, currentLimit, query);
+      const result = await this.adStore.getAllAdsIdAndImages();
       return result;
     } catch (error) {
       throw error;
@@ -357,4 +369,21 @@ export class AdService {
     }
   }
 
+  async migrateSlugs() {
+    try {
+      const result = await this.adStore.migrateSlugs();
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAllSlugs() {
+    try {
+      const result = await this.adStore.getAllSlugs();
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
 }

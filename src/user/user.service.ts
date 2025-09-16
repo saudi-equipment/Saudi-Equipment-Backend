@@ -190,7 +190,7 @@ export class UserService {
       updatedUser.ads = undefined;
       updatedUser.subscriptions = undefined;
       return updatedUser;
-    } catch (error) { 
+    } catch (error) {
       throw error;
     }
   }
@@ -398,10 +398,17 @@ export class UserService {
     }
   }
 
-
   async getAllUsersToExportUsers() {
     try {
       return await this.userStore.findAllUsers();
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAllUsers(): Promise<{ _id: any; profilePicture?: string }[]> {
+    try {
+      return await this.userStore.getAllUsers();
     } catch (error) {
       throw error;
     }

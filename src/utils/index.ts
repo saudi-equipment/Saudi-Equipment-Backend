@@ -4,3 +4,4 @@ export * from './generate.ad.id.helper';
 export * from './pagination.helper';
 export * from './file.limit.validator.helper';
 export * from './check.duplication.images';
+export * from './generate.slug.helper';

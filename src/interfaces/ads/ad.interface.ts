@@ -35,6 +35,7 @@ export interface IAd {
   promotionEndDate?: Date;
   adPromotion?: Types.ObjectId;
   images: string[];
+  slug?: string;
   createdAt: Date;
   updatedAt: Date;
 }

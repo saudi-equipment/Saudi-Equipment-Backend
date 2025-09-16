@@ -35,9 +35,7 @@ import { validateAdImagesSize } from 'src/utils';
 
 @Controller('ad')
 export class AdController {
-  constructor(
-    private readonly adService: AdService,
-  ) {}
+  constructor(private readonly adService: AdService) {}
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
@@ -178,9 +176,9 @@ export class AdController {
 
   @Public()
   @Get('get-all-ad-id')
-  async getAllAdsId(@Res() response, @Query() query: GetAllAdQueryDto) {
+  async getAllAdsIdAndImages(@Res() response) {
     try {
-      const data = await this.adService.getAllAdId(query);
+      const data = await this.adService.getAllAdsIdAndImages();
       return response.status(HttpStatus.OK).json(data);
     } catch (error) {
       return response.status(HttpStatus.NOT_FOUND).json({
@@ -189,7 +187,23 @@ export class AdController {
       });
     }
   }
-  
+
+  @Public()
+  @Get('slug/:slug')
+  async getAdBySlug(@Res() response, @Param('slug') slug: string) {
+    try {
+      const data = await this.adService.getAdBySlug(slug);
+      const result = { ad: data };
+
+      return response.status(HttpStatus.OK).json(result);
+    } catch (error) {
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: error.message || 'Ad Not found',
+      });
+    }
+  }
+
   @Public()
   @Get(':id')
   async getAdById(@Res() response, @Param('id') id: string) {
@@ -288,6 +302,38 @@ export class AdController {
       return response.status(500).json({
         message: 'Error deleting ad',
         error: error.message,
+      });
+    }
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Post('migrate-slugs')
+  async migrateSlugs(@Res() response) {
+    try {
+      const result = await this.adService.migrateSlugs();
+      return response.status(200).json({
+        message: 'Slug migration completed successfully',
+        data: result,
+      });
+    } catch (error) {
+      return response.status(500).json({
+        message: 'Error migrating slugs',
+        error: error.message,
+      });
+    }
+  }
+
+  @Public()
+  @Get('slugs/get-all-slugs')
+  async getAllSlugs(@Res() response) {
+    try {
+      const data = await this.adService.getAllSlugs();
+      return response.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: error.message || 'Slugs Not found',
       });
     }
   }

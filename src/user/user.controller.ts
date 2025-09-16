@@ -17,7 +17,12 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UserService } from './user.service';
-import { AddAdminUser, AddUser, GetUserListQueryDto, UserUpdateDto } from './dtos';
+import {
+  AddAdminUser,
+  AddUser,
+  GetUserListQueryDto,
+  UserUpdateDto,
+} from './dtos';
 import { RolesGuard } from 'src/auth/guard/roles.gurad';
 import { Roles } from 'src/decorators/roles.decorator';
 import { UserRole } from 'src/enums';
@@ -30,9 +35,7 @@ import { ConflictException } from '@nestjs/common';
 
 @Controller('user')
 export class UserController {
-  constructor(
-    private readonly userService: UserService,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -45,7 +48,7 @@ export class UserController {
       throw error;
     }
   }
-  
+
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @Get('user-payment-details')
@@ -56,7 +59,7 @@ export class UserController {
       throw error;
     }
   }
-  
+
   @UseGuards(RolesGuard)
   @Roles(UserRole.USER)
   @UseInterceptors(FileInterceptor('profilePicture'))
@@ -142,21 +145,40 @@ export class UserController {
     return await this.userService.getAllUserList(query);
   }
 
+  @Public()
+  @Get('getallusers')
+  async getAllUsers(@Res() response) {
+    try {
+      const data = await this.userService.getAllUsers();
+      console.log('data', data);
+      return response.status(HttpStatus.OK).json(data);
+    } catch (error) {
+      return response.status(HttpStatus.NOT_FOUND).json({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: error.message || 'Users not found',
+      });
+    }
+  }
+
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Post('add-user')
   async addUserByAdmin(@Body() payload: AddUser) {
     try {
-      const existingEmail = await this.userService.findExistingUser(payload.email);
+      const existingEmail = await this.userService.findExistingUser(
+        payload.email,
+      );
       if (existingEmail) {
         throw new ConflictException('Email already exists');
       }
-      
-      const existingPhone = await this.userService.findExistingUserByNumber(payload.phoneNumber);
+
+      const existingPhone = await this.userService.findExistingUserByNumber(
+        payload.phoneNumber,
+      );
       if (existingPhone) {
         throw new ConflictException('Phone number already exists');
       }
-      
+
       return await this.userService.addUserByAdmin(payload);
     } catch (error) {
       throw error;
@@ -168,22 +190,26 @@ export class UserController {
   @Post('add-admin')
   async addAdmin(@Body() payload: AddAdminUser) {
     try {
-      const existingEmail = await this.userService.findExistingUser(payload.email);
+      const existingEmail = await this.userService.findExistingUser(
+        payload.email,
+      );
       if (existingEmail) {
         throw new ConflictException('Email already exists');
       }
-      
-      const existingPhone = await this.userService.findExistingUserByNumber(payload.phoneNumber);
+
+      const existingPhone = await this.userService.findExistingUserByNumber(
+        payload.phoneNumber,
+      );
       if (existingPhone) {
         throw new ConflictException('Phone number already exists');
       }
-      
+
       return await this.userService.addAdmin(payload);
     } catch (error) {
       throw error;
     }
   }
-  
+
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @Get('admin-list')
