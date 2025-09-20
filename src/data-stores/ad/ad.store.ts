@@ -597,6 +597,7 @@ export class AdStore {
         sortByPrice,
         sortByDate,
         isHome,
+        isLatestAds,
         isPromoted,
         userId,
       } = query;
@@ -702,7 +703,7 @@ export class AdStore {
         }
       }
 
-      const promotedFilters = { ...filters, isPromoted: true };
+      const promotedFilters = { ...filters, isPromoted: isLatestAds?false:true,...cityFilter };
       const regularFilters = {
         ...filters,
         ...(isHome ? {} : { isPromoted: false }),

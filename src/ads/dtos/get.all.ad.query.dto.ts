@@ -39,6 +39,11 @@ export class GetAllAdQueryDto {
   @IsOptional()
   @IsString()
   isPromoted?: boolean;
+
+  @ApiProperty({ description: ' Flag for the latest ads' })
+  @IsOptional()
+  @IsString()
+  isLatestAds?: boolean;
   
   @ApiProperty({ description: ' Flag for the home Screen' })
   @IsOptional()
